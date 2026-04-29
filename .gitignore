@@ -1,0 +1,19 @@
+# Node.js & Next.js (Web Admin)
+node_modules/
+.next/
+out/
+.env
+.env*.local
+
+# Flutter & Dart (Mobile Tamu)
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Sistem Operasi & Text Editor
+.DS_Store
+.vscode/
+Thumbs.db
