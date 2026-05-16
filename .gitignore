@@ -17,3 +17,7 @@ build/
 .DS_Store
 .vscode/
 Thumbs.db
+
+# Dokumen Tugas Akhir (bukan source code)
+*.docx
+*.pdf
