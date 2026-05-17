@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,8 +30,18 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "CredentialsSignin" || error === "Credentials") {
+      setServerError("Email atau kata sandi salah");
+    } else if (error) {
+      setServerError("Terjadi kesalahan saat masuk. Silakan coba lagi.");
+    }
+  }, [searchParams]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -55,7 +65,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dasbor");
+    const callbackUrl = searchParams.get("callbackUrl") ?? "/dasbor";
+    router.push(callbackUrl);
     router.refresh();
   }
 
