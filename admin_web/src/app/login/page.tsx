@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,25 +44,19 @@ export default function LoginPage() {
 
   async function onSubmit(values: LoginFormValues) {
     setServerError(null);
-    try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: values.email, password: values.password }),
-      });
+    const result = await signIn("credentials", {
+      email: values.email,
+      password: values.password,
+      redirect: false,
+    });
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        setServerError(data.message ?? "Gagal masuk");
-        return;
-      }
-
-      router.push("/dasbor");
-      router.refresh();
-    } catch {
-      setServerError("Tidak dapat terhubung ke server");
+    if (!result || result.error) {
+      setServerError("Email atau kata sandi salah");
+      return;
     }
+
+    router.push("/dasbor");
+    router.refresh();
   }
 
   return (

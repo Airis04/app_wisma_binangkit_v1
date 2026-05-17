@@ -1,11 +1,21 @@
-import { Bell, UserCircle } from "lucide-react";
-import AdminSidebar from "./_components/admin-sidebar";
+import { Bell } from "lucide-react";
+import { redirect } from "next/navigation";
 
-export default function AdminLayout({
+import { auth } from "@/auth";
+import AdminSidebar from "./_components/admin-sidebar";
+import UserMenu from "./_components/user-menu";
+
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 w-full">
       <AdminSidebar />
@@ -21,12 +31,10 @@ export default function AdminLayout({
               <Bell size={24} />
               <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-            <button
-              className="text-gray-500 hover:text-[#1E3A8A] transition-colors"
-              aria-label="Akun pengguna"
-            >
-              <UserCircle size={28} />
-            </button>
+            <UserMenu
+              namaLengkap={session.user.nama_lengkap}
+              email={session.user.email ?? ""}
+            />
           </div>
         </header>
 
