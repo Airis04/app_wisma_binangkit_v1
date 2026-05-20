@@ -8,6 +8,7 @@ import UnitForm from "../../_components/unit-form";
 import {
   KATEGORI_UNIT,
   STATUS_UNIT,
+  pisahFasilitas,
   type UnitFormValues,
 } from "../../_lib/schema";
 
@@ -20,6 +21,7 @@ export default async function UnitEditPage({ params }: Props) {
 
   const unit = await prisma.unit.findUnique({
     where: { id_unit },
+    include: { fotos: { orderBy: { urutan: "asc" } } },
   });
 
   if (!unit) {
@@ -38,18 +40,23 @@ export default async function UnitEditPage({ params }: Props) {
     ? (unit.status_unit as (typeof STATUS_UNIT)[number])
     : "Tersedia";
 
+  const { fasilitas, fasilitas_lainnya } = pisahFasilitas(unit.fasilitas);
+
   const defaultValues: UnitFormValues = {
     id_unit: unit.id_unit,
     nama_unit: unit.nama_unit,
     kategori,
     harga_per_malam: unit.harga_per_malam,
     kapasitas: unit.kapasitas,
-    fasilitas: unit.fasilitas
-      .split(",")
-      .map((f) => f.trim())
-      .filter(Boolean),
+    fasilitas: fasilitas as ("WiFi" | "AC" | "TV")[],
+    fasilitas_lainnya,
     status_unit: status,
   };
+
+  const existingFotos = unit.fotos.map((f) => ({
+    id: f.id_foto,
+    url: f.file_path,
+  }));
 
   return (
     <div className="space-y-6">
@@ -69,15 +76,15 @@ export default async function UnitEditPage({ params }: Props) {
           Edit Unit {unit.nama_unit}
         </h1>
         <p className="text-sm text-gray-500">
-          Perbarui data unit. Ganti foto hanya jika Anda ingin mengganti foto
-          existing.
+          Perbarui data unit. Foto pertama akan menjadi cover di daftar unit
+          dan katalog tamu.
         </p>
       </div>
 
       <UnitForm
         mode="edit"
         defaultValues={defaultValues}
-        existingFotoUrl={unit.foto_unit}
+        existingFotos={existingFotos}
       />
     </div>
   );

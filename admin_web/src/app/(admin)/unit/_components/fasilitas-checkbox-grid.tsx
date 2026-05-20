@@ -1,10 +1,10 @@
 "use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { FASILITAS_OPTIONS } from "../_lib/schema";
+import { FASILITAS_DEFAULT } from "../_lib/schema";
 
 type Props = {
-  value: string[];
+  value: readonly string[];
   onChange: (next: string[]) => void;
 };
 
@@ -18,23 +18,22 @@ export default function FasilitasCheckboxGrid({ value, onChange }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      {FASILITAS_OPTIONS.map((item) => {
-        const id = `fasilitas-${item.replace(/\s+/g, "-").toLowerCase()}`;
+    <div className="flex flex-wrap gap-x-6 gap-y-3">
+      {FASILITAS_DEFAULT.map((item) => {
+        const id = `fasilitas-${item.toLowerCase()}`;
         const checked = value.includes(item);
         return (
           <label
             key={item}
             htmlFor={id}
-            className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors data-[checked=true]:border-[#1E3A8A] data-[checked=true]:bg-[#1E3A8A]/5"
-            data-checked={checked}
+            className="flex items-center gap-2 cursor-pointer select-none"
           >
             <Checkbox
               id={id}
               checked={checked}
               onCheckedChange={() => toggle(item)}
             />
-            <span className="text-sm text-gray-700 select-none">{item}</span>
+            <span className="text-sm text-gray-700">{item}</span>
           </label>
         );
       })}
