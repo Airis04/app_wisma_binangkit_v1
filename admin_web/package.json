@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:admin": "tsx --env-file=.env prisma/seed-admin.ts"
+    "seed:admin": "tsx --env-file=.env prisma/seed-admin.ts",
+    "seed:reservasi": "tsx --env-file=.env prisma/seed-reservasi.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
