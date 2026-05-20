@@ -174,14 +174,17 @@ export default function UnitForm({
                           className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                         />
                         <Input
-                          type="number"
-                          min={1}
+                          inputMode="numeric"
                           placeholder="Misal: 2"
                           className="pl-9"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
+                          value={field.value === 0 ? "" : String(field.value)}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, "");
+                            field.onChange(digits === "" ? 0 : Number(digits));
+                          }}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </div>
                     </FormControl>
@@ -290,14 +293,21 @@ export default function UnitForm({
                           Rp
                         </span>
                         <Input
-                          type="number"
-                          min={0}
+                          inputMode="numeric"
                           placeholder="0"
                           className="pl-10"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
+                          value={
+                            field.value === 0
+                              ? ""
+                              : field.value.toLocaleString("id-ID")
                           }
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, "");
+                            field.onChange(digits === "" ? 0 : Number(digits));
+                          }}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </div>
                     </FormControl>
