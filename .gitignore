@@ -21,3 +21,7 @@ Thumbs.db
 # Dokumen Tugas Akhir (bukan source code)
 *.docx
 *.pdf
+
+# Foto unit yang di-upload (tidak ikut tracked)
+admin_web/public/uploads/units/*
+!admin_web/public/uploads/units/.gitkeep
