@@ -79,3 +79,15 @@
   color: #162d6e;
   text-decoration: underline;
 }
+
+.wb-calendar-wrap .rbc-day-bg.wb-day-past {
+  background-color: #f3f4f6;
+}
+
+.wb-calendar-wrap .rbc-date-cell.wb-day-past {
+  color: #9ca3af;
+}
+
+.wb-calendar-wrap .rbc-date-cell.wb-day-past .rbc-button-link {
+  color: #9ca3af;
+}
