@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,37 +34,56 @@ import {
 } from "../_lib/schema";
 import { createUnit, updateUnit } from "../_actions";
 import FasilitasCheckboxGrid from "./fasilitas-checkbox-grid";
-import FotoUploader from "./foto-uploader";
+import MultiFotoUploader, { type FotoExisting } from "./multi-foto-uploader";
 
 type Props = {
   mode: "create" | "edit";
   defaultValues?: UnitFormValues;
-  existingFotoUrl?: string | null;
+  existingFotos?: FotoExisting[];
 };
 
 export default function UnitForm({
   mode,
   defaultValues,
-  existingFotoUrl,
+  existingFotos = [],
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [foto, setFoto] = useState<File | null>(null);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [removedExistingIds, setRemovedExistingIds] = useState<number[]>([]);
 
   const form = useForm<UnitFormValues>({
     resolver: zodResolver(unitFormSchema),
     defaultValues: defaultValues ?? {
       id_unit: "",
       nama_unit: "",
-      kategori: "Rumah Utama",
-      harga_per_malam: 0,
       kapasitas: 1,
       fasilitas: [],
+      fasilitas_lainnya: "",
+      kategori: "Rumah Utama",
       status_unit: "Tersedia",
+      harga_per_malam: 0,
     },
   });
 
   function onSubmit(values: UnitFormValues) {
+    if (mode === "create" && newFiles.length === 0) {
+      toast.error("Tambahkan minimal 1 foto unit");
+      return;
+    }
+
+    const remainingExisting = existingFotos.filter(
+      (f) => !removedExistingIds.includes(f.id)
+    );
+    if (
+      mode === "edit" &&
+      remainingExisting.length === 0 &&
+      newFiles.length === 0
+    ) {
+      toast.error("Unit harus punya minimal 1 foto");
+      return;
+    }
+
     const formData = new FormData();
     formData.set("id_unit", values.id_unit);
     formData.set("nama_unit", values.nama_unit);
@@ -73,7 +92,11 @@ export default function UnitForm({
     formData.set("kapasitas", String(values.kapasitas));
     formData.set("status_unit", values.status_unit);
     values.fasilitas.forEach((f) => formData.append("fasilitas", f));
-    if (foto) formData.set("foto", foto);
+    formData.set("fasilitas_lainnya", values.fasilitas_lainnya);
+    newFiles.forEach((file) => formData.append("foto_baru", file));
+    removedExistingIds.forEach((id) =>
+      formData.append("foto_dihapus", String(id))
+    );
 
     startTransition(async () => {
       const result =
@@ -96,144 +119,72 @@ export default function UnitForm({
               <CardTitle className="text-base font-semibold text-gray-900">
                 Informasi Dasar
               </CardTitle>
-              <p className="text-sm text-gray-500">
-                Data utama unit homestay yang akan ditampilkan ke tamu.
-              </p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="id_unit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ID Unit</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="UNT-000001"
-                          maxLength={10}
-                          disabled={mode === "edit"}
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(e.target.value.toUpperCase())
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="nama_unit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nama Unit</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Rumah Utama" maxLength={30} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <FormField
                 control={form.control}
-                name="kategori"
+                name="id_unit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kategori</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih kategori" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {KATEGORI_UNIT.map((k) => (
-                          <SelectItem key={k} value={k}>
-                            {k}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>ID Unit</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Misal: UNT-001"
+                        maxLength={10}
+                        disabled={mode === "edit"}
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.toUpperCase())
+                        }
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="kapasitas"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kapasitas (orang)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={1}
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="harga_per_malam"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Harga per Malam (Rp)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="nama_unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nama Unit</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Misal: Kamar 101"
+                        maxLength={30}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
-                name="status_unit"
+                name="kapasitas"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status Unit</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {STATUS_UNIT.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Kapasitas</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Users
+                          size={16}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                        />
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder="Misal: 2"
+                          className="pl-9"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -259,6 +210,101 @@ export default function UnitForm({
                   </div>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="fasilitas_lainnya"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fasilitas Lainnya</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ketik fasilitas lainnya, pisahkan dengan koma"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="kategori"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Kategori</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih Kategori" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {KATEGORI_UNIT.map((k) => (
+                          <SelectItem key={k} value={k}>
+                            {k}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status_unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status Unit</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih Status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {STATUS_UNIT.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="harga_per_malam"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Harga (Per Malam)</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">
+                          Rp
+                        </span>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          className="pl-10"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
@@ -267,15 +313,16 @@ export default function UnitForm({
               <CardTitle className="text-base font-semibold text-gray-900">
                 Foto Unit
               </CardTitle>
-              <p className="text-sm text-gray-500">
-                Foto akan otomatis dikompresi ke WebP sebelum disimpan.
-              </p>
             </CardHeader>
             <CardContent>
-              <FotoUploader
-                value={foto}
-                onChange={setFoto}
-                existingUrl={existingFotoUrl}
+              <MultiFotoUploader
+                newFiles={newFiles}
+                onNewFilesChange={setNewFiles}
+                existingFotos={existingFotos}
+                removedExistingIds={removedExistingIds}
+                onRemoveExisting={(id) =>
+                  setRemovedExistingIds((prev) => [...prev, id])
+                }
               />
             </CardContent>
           </Card>

@@ -8,7 +8,7 @@ import sharp from "sharp";
 
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { unitFormSchema } from "./_lib/schema";
+import { unitFormSchema, gabungFasilitas } from "./_lib/schema";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "units");
 const PUBLIC_PATH_PREFIX = "/uploads/units";
@@ -20,17 +20,34 @@ async function requireAdmin() {
   }
 }
 
-async function processFoto(file: File, idUnit: string): Promise<string> {
-  await mkdir(UPLOAD_DIR, { recursive: true });
+async function compressFoto(file: File): Promise<Buffer> {
   const buffer = Buffer.from(await file.arrayBuffer());
-  const compressed = await sharp(buffer)
+  return await sharp(buffer)
     .resize({ width: 1280, withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
+}
 
-  const fileName = `${idUnit}.webp`;
+async function saveFoto(
+  file: File,
+  idUnit: string,
+  index: number
+): Promise<string> {
+  await mkdir(UPLOAD_DIR, { recursive: true });
+  const compressed = await compressFoto(file);
+  const fileName = `${idUnit}-${Date.now()}-${index}.webp`;
   await writeFile(path.join(UPLOAD_DIR, fileName), compressed);
   return `${PUBLIC_PATH_PREFIX}/${fileName}`;
+}
+
+async function unlinkPublicFile(publicPath: string) {
+  if (!publicPath) return;
+  const fileName = path.basename(publicPath);
+  try {
+    await unlink(path.join(UPLOAD_DIR, fileName));
+  } catch {
+    // file sudah tidak ada, abaikan
+  }
 }
 
 function parseFormPayload(formData: FormData) {
@@ -43,6 +60,7 @@ function parseFormPayload(formData: FormData) {
     harga_per_malam: Number(formData.get("harga_per_malam")),
     kapasitas: Number(formData.get("kapasitas")),
     fasilitas: fasilitasRaw,
+    fasilitas_lainnya: String(formData.get("fasilitas_lainnya") ?? "").trim(),
     status_unit: String(formData.get("status_unit") ?? ""),
   });
 }
@@ -71,16 +89,31 @@ export async function createUnit(formData: FormData): Promise<ActionResult> {
     return { ok: false, message: `ID Unit ${parsed.id_unit} sudah dipakai` };
   }
 
-  const fotoFile = formData.get("foto") as File | null;
-  let fotoPath: string | null = null;
-  if (fotoFile && fotoFile.size > 0) {
-    try {
-      fotoPath = await processFoto(fotoFile, parsed.id_unit);
-    } catch (err) {
-      console.error("Gagal proses foto:", err);
-      return { ok: false, message: "Gagal memproses foto unit" };
-    }
+  const fotoFiles = formData
+    .getAll("foto_baru")
+    .filter((v): v is File => v instanceof File && v.size > 0);
+
+  if (fotoFiles.length === 0) {
+    return { ok: false, message: "Tambahkan minimal 1 foto unit" };
   }
+
+  const fotoPaths: string[] = [];
+  try {
+    for (let i = 0; i < fotoFiles.length; i++) {
+      fotoPaths.push(await saveFoto(fotoFiles[i], parsed.id_unit, i));
+    }
+  } catch (err) {
+    console.error("Gagal proses foto:", err);
+    for (const p of fotoPaths) {
+      await unlinkPublicFile(p);
+    }
+    return { ok: false, message: "Gagal memproses foto unit" };
+  }
+
+  const fasilitasGabungan = gabungFasilitas(
+    parsed.fasilitas,
+    parsed.fasilitas_lainnya
+  );
 
   await prisma.unit.create({
     data: {
@@ -89,9 +122,15 @@ export async function createUnit(formData: FormData): Promise<ActionResult> {
       kategori: parsed.kategori,
       harga_per_malam: parsed.harga_per_malam,
       kapasitas: parsed.kapasitas,
-      fasilitas: parsed.fasilitas.join(", "),
-      foto_unit: fotoPath,
+      fasilitas: fasilitasGabungan,
+      foto_unit: fotoPaths[0],
       status_unit: parsed.status_unit,
+      fotos: {
+        create: fotoPaths.map((p, idx) => ({
+          file_path: p,
+          urutan: idx,
+        })),
+      },
     },
   });
 
@@ -121,34 +160,86 @@ export async function updateUnit(
 
   const existing = await prisma.unit.findUnique({
     where: { id_unit: idUnit },
+    include: { fotos: { orderBy: { urutan: "asc" } } },
   });
   if (!existing) {
     return { ok: false, message: "Unit tidak ditemukan" };
   }
 
-  const fotoFile = formData.get("foto") as File | null;
-  let fotoPath = existing.foto_unit;
-  if (fotoFile && fotoFile.size > 0) {
-    try {
-      fotoPath = await processFoto(fotoFile, idUnit);
-    } catch (err) {
-      console.error("Gagal proses foto:", err);
-      return { ok: false, message: "Gagal memproses foto unit" };
-    }
+  const removedIds = formData
+    .getAll("foto_dihapus")
+    .map((v) => Number(v))
+    .filter((n) => Number.isInteger(n));
+
+  const fotoFiles = formData
+    .getAll("foto_baru")
+    .filter((v): v is File => v instanceof File && v.size > 0);
+
+  const remainingExistingFotos = existing.fotos.filter(
+    (f) => !removedIds.includes(f.id_foto)
+  );
+
+  if (remainingExistingFotos.length === 0 && fotoFiles.length === 0) {
+    return { ok: false, message: "Unit harus punya minimal 1 foto" };
   }
 
-  await prisma.unit.update({
-    where: { id_unit: idUnit },
-    data: {
-      nama_unit: parsed.nama_unit,
-      kategori: parsed.kategori,
-      harga_per_malam: parsed.harga_per_malam,
-      kapasitas: parsed.kapasitas,
-      fasilitas: parsed.fasilitas.join(", "),
-      foto_unit: fotoPath,
-      status_unit: parsed.status_unit,
-    },
+  const newFotoPaths: string[] = [];
+  try {
+    for (let i = 0; i < fotoFiles.length; i++) {
+      newFotoPaths.push(await saveFoto(fotoFiles[i], idUnit, i));
+    }
+  } catch (err) {
+    console.error("Gagal proses foto:", err);
+    for (const p of newFotoPaths) {
+      await unlinkPublicFile(p);
+    }
+    return { ok: false, message: "Gagal memproses foto unit" };
+  }
+
+  const fasilitasGabungan = gabungFasilitas(
+    parsed.fasilitas,
+    parsed.fasilitas_lainnya
+  );
+
+  const coverPath =
+    remainingExistingFotos[0]?.file_path ?? newFotoPaths[0] ?? null;
+
+  await prisma.$transaction(async (tx) => {
+    if (removedIds.length > 0) {
+      await tx.unitFoto.deleteMany({
+        where: { id_foto: { in: removedIds }, id_unit: idUnit },
+      });
+    }
+
+    if (newFotoPaths.length > 0) {
+      const startUrutan = remainingExistingFotos.length;
+      await tx.unitFoto.createMany({
+        data: newFotoPaths.map((p, idx) => ({
+          id_unit: idUnit,
+          file_path: p,
+          urutan: startUrutan + idx,
+        })),
+      });
+    }
+
+    await tx.unit.update({
+      where: { id_unit: idUnit },
+      data: {
+        nama_unit: parsed.nama_unit,
+        kategori: parsed.kategori,
+        harga_per_malam: parsed.harga_per_malam,
+        kapasitas: parsed.kapasitas,
+        fasilitas: fasilitasGabungan,
+        foto_unit: coverPath,
+        status_unit: parsed.status_unit,
+      },
+    });
   });
+
+  const removedFotos = existing.fotos.filter((f) => removedIds.includes(f.id_foto));
+  for (const f of removedFotos) {
+    await unlinkPublicFile(f.file_path);
+  }
 
   revalidatePath("/unit");
   revalidatePath(`/unit/${idUnit}/edit`);
@@ -172,20 +263,21 @@ export async function deleteUnit(idUnit: string): Promise<ActionResult> {
     };
   }
 
-  const unit = await prisma.unit.findUnique({ where: { id_unit: idUnit } });
+  const unit = await prisma.unit.findUnique({
+    where: { id_unit: idUnit },
+    include: { fotos: true },
+  });
   if (!unit) {
     return { ok: false, message: "Unit tidak ditemukan" };
   }
 
   await prisma.unit.delete({ where: { id_unit: idUnit } });
 
-  if (unit.foto_unit) {
-    const fileName = path.basename(unit.foto_unit);
-    try {
-      await unlink(path.join(UPLOAD_DIR, fileName));
-    } catch {
-      // foto sudah tidak ada, abaikan
-    }
+  for (const foto of unit.fotos) {
+    await unlinkPublicFile(foto.file_path);
+  }
+  if (unit.foto_unit && !unit.fotos.some((f) => f.file_path === unit.foto_unit)) {
+    await unlinkPublicFile(unit.foto_unit);
   }
 
   revalidatePath("/unit");
