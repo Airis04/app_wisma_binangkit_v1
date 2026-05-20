@@ -13,6 +13,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { formatRupiah } from "@/lib/format";
 
@@ -120,10 +127,22 @@ export default function KalenderPemesanan({ events, selectedUnitIds }: Props) {
     };
   }
 
+  function dayPropGetter(date: Date) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const cell = new Date(date);
+    cell.setHours(0, 0, 0, 0);
+    if (cell < today) {
+      return { className: "wb-day-past" };
+    }
+    return {};
+  }
+
   return (
     <Card className="border-gray-200 p-4">
       <CustomToolbar
         date={currentDate}
+        onChange={(d) => setCurrentDate(d)}
         onNavigate={(action) => {
           const next = new Date(currentDate);
           if (action === "PREV") {
@@ -152,6 +171,7 @@ export default function KalenderPemesanan({ events, selectedUnitIds }: Props) {
           messages={messages}
           culture="id"
           eventPropGetter={eventPropGetter}
+          dayPropGetter={dayPropGetter}
           onSelectEvent={handleSelectEvent}
           popup={false}
           style={{ height: 620 }}
@@ -244,14 +264,35 @@ export default function KalenderPemesanan({ events, selectedUnitIds }: Props) {
 function CustomToolbar({
   date,
   onNavigate,
+  onChange,
 }: {
   date: Date;
   onNavigate: (action: "PREV" | "NEXT" | "TODAY") => void;
+  onChange: (next: Date) => void;
 }) {
-  const label = format(date, "MMMM yyyy", { locale: idLocale });
+  const currentYear = new Date().getFullYear();
+  const yearOptions: number[] = [];
+  for (let y = currentYear - 3; y <= currentYear + 5; y++) {
+    yearOptions.push(y);
+  }
+
+  const monthLabels = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ];
 
   return (
-    <div className="flex items-center justify-between mb-4 px-1">
+    <div className="flex flex-wrap items-center justify-between gap-3 mb-4 px-1">
       <div className="flex items-center gap-1">
         <Button
           type="button"
@@ -280,10 +321,50 @@ function CustomToolbar({
           <ChevronRight size={16} />
         </Button>
       </div>
-      <h2 className="text-lg font-semibold text-gray-900 capitalize">
-        {label}
-      </h2>
-      <div className="w-[160px]" />
+
+      <div className="flex items-center gap-2">
+        <Select
+          value={String(date.getMonth())}
+          onValueChange={(v) => {
+            const next = new Date(date);
+            next.setDate(1);
+            next.setMonth(Number(v));
+            onChange(next);
+          }}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {monthLabels.map((label, idx) => (
+              <SelectItem key={label} value={String(idx)}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={String(date.getFullYear())}
+          onValueChange={(v) => {
+            const next = new Date(date);
+            next.setDate(1);
+            next.setFullYear(Number(v));
+            onChange(next);
+          }}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {yearOptions.map((year) => (
+              <SelectItem key={year} value={String(year)}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }
