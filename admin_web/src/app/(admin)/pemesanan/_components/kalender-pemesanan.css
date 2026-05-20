@@ -1,0 +1,81 @@
+/* Override react-big-calendar styles agar match palet AGENTS.md.
+   Scoped ke .wb-calendar-wrap supaya tidak bocor ke komponen lain. */
+
+.wb-calendar-wrap .rbc-calendar {
+  font-family: inherit;
+  color: #111827;
+}
+
+.wb-calendar-wrap .rbc-month-view {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wb-calendar-wrap .rbc-header {
+  padding: 10px 6px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.wb-calendar-wrap .rbc-header + .rbc-header,
+.wb-calendar-wrap .rbc-day-bg + .rbc-day-bg,
+.wb-calendar-wrap .rbc-month-row + .rbc-month-row {
+  border-color: #f3f4f6;
+}
+
+.wb-calendar-wrap .rbc-month-row {
+  min-height: 110px;
+}
+
+.wb-calendar-wrap .rbc-date-cell {
+  padding: 6px 8px;
+  font-size: 13px;
+  text-align: right;
+  color: #374151;
+}
+
+.wb-calendar-wrap .rbc-off-range-bg {
+  background-color: #fafafa;
+}
+
+.wb-calendar-wrap .rbc-off-range {
+  color: #9ca3af;
+}
+
+.wb-calendar-wrap .rbc-today {
+  background-color: rgba(30, 58, 138, 0.06);
+}
+
+.wb-calendar-wrap .rbc-now > .rbc-button-link {
+  color: #1e3a8a;
+  font-weight: 700;
+}
+
+.wb-calendar-wrap .rbc-event {
+  border: none;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.wb-calendar-wrap .rbc-event:focus,
+.wb-calendar-wrap .rbc-event.rbc-selected {
+  outline: 2px solid #1e3a8a;
+  outline-offset: 1px;
+}
+
+.wb-calendar-wrap .rbc-show-more {
+  color: #1e3a8a;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.wb-calendar-wrap .rbc-show-more:hover {
+  color: #162d6e;
+  text-decoration: underline;
+}
