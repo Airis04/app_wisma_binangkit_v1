@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Eye } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatRupiah } from "@/lib/format";
+import { setujuiReservasi, tolakReservasi } from "../_actions";
 
 export type ReservasiPending = {
   id_reservasi: string;
@@ -45,22 +46,31 @@ type Props = {
 
 export default function TabelVerifikasiPembayaran({ data }: Props) {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   function handleConfirm() {
     if (!confirmAction) return;
     const { type, reservasi } = confirmAction;
 
-    if (type === "setujui") {
-      toast.success(
-        `Reservasi ${reservasi.id_reservasi} disetujui. Unit ${reservasi.nama_unit} dikunci.`
-      );
-    } else {
-      toast.error(
-        `Reservasi ${reservasi.id_reservasi} ditolak. Slot tanggal kembali tersedia.`
-      );
-    }
+    startTransition(async () => {
+      const result =
+        type === "setujui"
+          ? await setujuiReservasi(reservasi.id_reservasi)
+          : await tolakReservasi(reservasi.id_reservasi);
 
-    setConfirmAction(null);
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
+
+      if (type === "setujui") {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+
+      setConfirmAction(null);
+    });
   }
 
   return (
@@ -154,7 +164,7 @@ export default function TabelVerifikasiPembayaran({ data }: Props) {
 
       <Dialog
         open={confirmAction !== null}
-        onOpenChange={(open) => !open && setConfirmAction(null)}
+        onOpenChange={(open) => !open && !isPending && setConfirmAction(null)}
       >
         <DialogContent>
           <DialogHeader>
@@ -169,9 +179,9 @@ export default function TabelVerifikasiPembayaran({ data }: Props) {
                   Reservasi <strong>{confirmAction?.reservasi.id_reservasi}</strong>{" "}
                   atas nama{" "}
                   <strong>{confirmAction?.reservasi.nama_tamu}</strong> akan
-                  ditandai <strong>Selesai</strong>. Unit{" "}
-                  {confirmAction?.reservasi.nama_unit} akan dikunci pada
-                  rentang tanggal yang dipesan dan tidak bisa diubah lagi.
+                  ditandai <strong>Selesai</strong>. Slot tanggal di unit{" "}
+                  {confirmAction?.reservasi.nama_unit} akan terkunci dan tidak
+                  bisa dipesan lagi.
                 </>
               ) : (
                 <>
@@ -186,6 +196,7 @@ export default function TabelVerifikasiPembayaran({ data }: Props) {
             <Button
               variant="outline"
               onClick={() => setConfirmAction(null)}
+              disabled={isPending}
             >
               Batal
             </Button>
@@ -193,14 +204,18 @@ export default function TabelVerifikasiPembayaran({ data }: Props) {
               <Button
                 className="bg-[#1E3A8A] hover:bg-[#162d6e] text-white"
                 onClick={handleConfirm}
+                disabled={isPending}
               >
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Ya, Setujui
               </Button>
             ) : (
               <Button
                 className="bg-[#EF4444] hover:bg-[#dc2626] text-white"
                 onClick={handleConfirm}
+                disabled={isPending}
               >
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Ya, Tolak
               </Button>
             )}

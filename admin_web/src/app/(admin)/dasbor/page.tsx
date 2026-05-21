@@ -3,9 +3,19 @@ import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import SummaryCard from "./_components/summary-card";
 import TrenLabaChart from "./_components/tren-laba-chart";
 import TabelVerifikasiPembayaran from "./_components/tabel-verifikasi-pembayaran";
-import { mockSummary, mockTrenLaba, mockReservasiPending } from "./mock-data";
+import {
+  getDasborSummary,
+  getTrenLaba,
+  getReservasiPending,
+} from "./_lib/queries";
 
-export default function DasborPage() {
+export default async function DasborPage() {
+  const [summary, trenLaba, reservasiPending] = await Promise.all([
+    getDasborSummary(),
+    getTrenLaba(),
+    getReservasiPending(),
+  ]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -18,30 +28,30 @@ export default function DasborPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <SummaryCard
           label="Pemasukan Bulan Ini"
-          value={mockSummary.pemasukan}
+          value={summary.pemasukan}
           description="Dari reservasi berstatus Selesai"
           icon={TrendingUp}
           variant="pemasukan"
         />
         <SummaryCard
           label="Pengeluaran Operasional"
-          value={mockSummary.pengeluaran}
+          value={summary.pengeluaran}
           description="Akumulasi biaya bulan berjalan"
           icon={TrendingDown}
           variant="pengeluaran"
         />
         <SummaryCard
           label="Laba Bersih"
-          value={mockSummary.laba_bersih}
+          value={summary.laba_bersih}
           description="Pemasukan dikurangi pengeluaran"
           icon={Wallet}
           variant="laba"
         />
       </div>
 
-      <TrenLabaChart data={mockTrenLaba} />
+      <TrenLabaChart data={trenLaba} />
 
-      <TabelVerifikasiPembayaran data={mockReservasiPending} />
+      <TabelVerifikasiPembayaran data={reservasiPending} />
     </div>
   );
 }
