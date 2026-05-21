@@ -49,7 +49,10 @@
 }
 
 .wb-calendar-wrap .rbc-today {
-  background-color: rgba(30, 58, 138, 0.06);
+  background-color: rgba(30, 58, 138, 0.08);
+  box-shadow: inset 0 0 0 2px #1e3a8a;
+  position: relative;
+  z-index: 1;
 }
 
 .wb-calendar-wrap .rbc-now > .rbc-button-link {
