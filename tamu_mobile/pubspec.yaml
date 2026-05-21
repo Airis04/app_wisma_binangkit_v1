@@ -30,10 +30,31 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+
+  # State management (sesuai AGENTS.md)
+  flutter_riverpod: ^2.6.1
+
+  # HTTP client + interceptor JWT (sesuai AGENTS.md)
+  dio: ^5.7.0
+
+  # Pengambil foto bukti transfer (sesuai AGENTS.md)
+  image_picker: ^1.1.2
+
+  # Lokalisasi (format Rupiah & kalender ID, sesuai AGENTS.md)
+  intl: ^0.20.2
+
+  # Routing
+  go_router: ^14.6.2
+
+  # Token storage aman (Keystore Android / Keychain iOS)
+  flutter_secure_storage: ^9.2.2
+
+  # Cache foto unit dari API
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:
