@@ -78,3 +78,14 @@ model OperationalCost {
 
   @@map("operational_costs")
 }
+
+model PaymentSetting {
+  id_setting              String   @id @db.Char(10)
+  nama_bank               String   @db.VarChar(30)
+  nomor_rekening          String   @db.VarChar(30)
+  nama_pemilik_rekening   String   @db.VarChar(50)
+  instruksi_pembayaran    String   @db.VarChar(200)
+  updated_at              DateTime @updatedAt @db.Timestamp()
+
+  @@map("payment_settings")
+}

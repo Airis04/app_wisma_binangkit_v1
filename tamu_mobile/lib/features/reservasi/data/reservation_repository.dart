@@ -74,10 +74,41 @@ class AvailabilityResult {
   }
 }
 
+class PaymentSettingManual {
+  const PaymentSettingManual({
+    required this.namaBank,
+    required this.nomorRekening,
+    required this.namaPemilikRekening,
+    required this.instruksiPembayaran,
+  });
+
+  final String namaBank;
+  final String nomorRekening;
+  final String namaPemilikRekening;
+  final String instruksiPembayaran;
+
+  factory PaymentSettingManual.fromJson(Map<String, dynamic> json) {
+    return PaymentSettingManual(
+      namaBank: json['nama_bank'] as String,
+      nomorRekening: json['nomor_rekening'] as String,
+      namaPemilikRekening: json['nama_pemilik_rekening'] as String,
+      instruksiPembayaran: json['instruksi_pembayaran'] as String,
+    );
+  }
+}
+
 class ReservationRepository {
   ReservationRepository(this._dio);
 
   final Dio _dio;
+
+  Future<PaymentSettingManual> fetchPaymentSetting() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/mobile/payment-settings',
+    );
+
+    return PaymentSettingManual.fromJson(_readData(response.data));
+  }
 
   Future<AvailabilityResult> checkAvailability({
     required String idUnit,
@@ -186,4 +217,8 @@ final reservationRepositoryProvider = Provider<ReservationRepository>((ref) {
 
 final myReservationsProvider = FutureProvider<List<ReservationMobile>>((ref) {
   return ref.watch(reservationRepositoryProvider).fetchMyReservations();
+});
+
+final paymentSettingProvider = FutureProvider<PaymentSettingManual>((ref) {
+  return ref.watch(reservationRepositoryProvider).fetchPaymentSetting();
 });

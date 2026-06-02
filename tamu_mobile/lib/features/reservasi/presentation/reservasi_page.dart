@@ -285,6 +285,7 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
   @override
   Widget build(BuildContext context) {
     final unit = ref.watch(unitDetailProvider(widget.idUnit));
+    final paymentSetting = ref.watch(paymentSettingProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Pesan Unit')),
@@ -294,6 +295,7 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
           checkin: _checkin,
           checkout: _checkout,
           availability: _availability,
+          paymentSetting: paymentSetting,
           buktiBayar: _buktiBayar,
           jumlahMalam: _jumlahMalam(),
           isPaymentStep: _isPaymentStep,
@@ -324,6 +326,7 @@ class _ReservasiForm extends StatelessWidget {
     required this.checkin,
     required this.checkout,
     required this.availability,
+    required this.paymentSetting,
     required this.buktiBayar,
     required this.jumlahMalam,
     required this.isPaymentStep,
@@ -344,6 +347,7 @@ class _ReservasiForm extends StatelessWidget {
   final DateTime? checkin;
   final DateTime? checkout;
   final AvailabilityResult? availability;
+  final AsyncValue<PaymentSettingManual> paymentSetting;
   final XFile? buktiBayar;
   final int jumlahMalam;
   final bool isPaymentStep;
@@ -468,7 +472,10 @@ class _ReservasiForm extends StatelessWidget {
         ],
         if (isPaymentStep) ...[
           const SizedBox(height: 16),
-          _PaymentInstructionCard(totalTagihan: totalTagihan),
+          _PaymentInstructionCard(
+            totalTagihan: totalTagihan,
+            paymentSetting: paymentSetting,
+          ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: isBusy ? null : onPickBukti,
@@ -619,9 +626,13 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _PaymentInstructionCard extends StatelessWidget {
-  const _PaymentInstructionCard({required this.totalTagihan});
+  const _PaymentInstructionCard({
+    required this.totalTagihan,
+    required this.paymentSetting,
+  });
 
   final int totalTagihan;
+  final AsyncValue<PaymentSettingManual> paymentSetting;
 
   @override
   Widget build(BuildContext context) {
@@ -643,24 +654,51 @@ class _PaymentInstructionCard extends StatelessWidget {
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 12),
-            const _PaymentInfoRow(label: 'Metode', value: 'Transfer Bank'),
-            const SizedBox(height: 8),
-            const _PaymentInfoRow(label: 'Bank', value: 'BCA'),
-            const SizedBox(height: 8),
-            const _PaymentInfoRow(label: 'No. Rekening', value: '1234567890'),
-            const SizedBox(height: 8),
-            const _PaymentInfoRow(label: 'Atas Nama', value: 'Wisma Binangkit'),
-            const SizedBox(height: 8),
-            _PaymentInfoRow(
-              label: 'Nominal',
-              value: formatRupiah(totalTagihan),
-              isStrong: true,
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Setelah transfer, unggah bukti pembayaran. Pemilik akan mengecek manual lewat Dasbor dan menyetujui pesanan.',
-              style: TextStyle(color: AppColors.grayMuted),
+            paymentSetting.when(
+              data: (setting) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
+                  const _PaymentInfoRow(
+                    label: 'Metode',
+                    value: 'Transfer Bank',
+                  ),
+                  const SizedBox(height: 8),
+                  _PaymentInfoRow(label: 'Bank', value: setting.namaBank),
+                  const SizedBox(height: 8),
+                  _PaymentInfoRow(
+                    label: 'No. Rekening',
+                    value: setting.nomorRekening,
+                  ),
+                  const SizedBox(height: 8),
+                  _PaymentInfoRow(
+                    label: 'Atas Nama',
+                    value: setting.namaPemilikRekening,
+                  ),
+                  const SizedBox(height: 8),
+                  _PaymentInfoRow(
+                    label: 'Nominal',
+                    value: formatRupiah(totalTagihan),
+                    isStrong: true,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    setting.instruksiPembayaran,
+                    style: const TextStyle(color: AppColors.grayMuted),
+                  ),
+                ],
+              ),
+              loading: () => const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: LinearProgressIndicator(),
+              ),
+              error: (_, __) => const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Text(
+                  'Gagal memuat rekening pembayaran. Coba buka halaman ini kembali.',
+                  style: TextStyle(color: AppColors.merah),
+                ),
+              ),
             ),
           ],
         ),
