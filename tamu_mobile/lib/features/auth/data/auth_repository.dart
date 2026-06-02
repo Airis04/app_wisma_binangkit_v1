@@ -87,6 +87,11 @@ class AuthRepository {
     return _tokenStorage.save(token: result.token, idUser: result.user.idUser);
   }
 
+  Future<bool> hasStoredToken() async {
+    final token = await _tokenStorage.readToken();
+    return token != null && token.isNotEmpty;
+  }
+
   Future<void> logout() => _tokenStorage.clear();
 
   AuthResult _handleAuthResponse(Map<String, dynamic>? body) {
