@@ -48,10 +48,53 @@ class ReservationMobile {
   }
 }
 
+class AvailabilityResult {
+  const AvailabilityResult({
+    required this.available,
+    required this.message,
+    required this.jumlahMalam,
+    required this.totalTagihan,
+    this.reason,
+  });
+
+  final bool available;
+  final String message;
+  final int jumlahMalam;
+  final int totalTagihan;
+  final String? reason;
+
+  factory AvailabilityResult.fromJson(Map<String, dynamic> json) {
+    return AvailabilityResult(
+      available: json['available'] == true,
+      message: json['message'] as String? ?? 'Status ketersediaan diterima.',
+      jumlahMalam: json['jumlah_malam'] as int? ?? 0,
+      totalTagihan: json['total_tagihan'] as int? ?? 0,
+      reason: json['reason'] as String?,
+    );
+  }
+}
+
 class ReservationRepository {
   ReservationRepository(this._dio);
 
   final Dio _dio;
+
+  Future<AvailabilityResult> checkAvailability({
+    required String idUnit,
+    required DateTime checkin,
+    required DateTime checkout,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/mobile/reservations/check-availability',
+      data: {
+        'id_unit': idUnit,
+        'tgl_checkin': _dateOnly(checkin),
+        'tgl_checkout': _dateOnly(checkout),
+      },
+    );
+
+    return AvailabilityResult.fromJson(_readData(response.data));
+  }
 
   Future<ReservationMobile> createReservation({
     required String idUnit,

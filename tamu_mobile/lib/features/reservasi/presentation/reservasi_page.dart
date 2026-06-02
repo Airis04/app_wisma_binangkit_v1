@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../config/theme.dart';
@@ -21,7 +22,9 @@ class ReservasiPage extends ConsumerStatefulWidget {
 class _ReservasiPageState extends ConsumerState<ReservasiPage> {
   DateTime? _checkin;
   DateTime? _checkout;
+  AvailabilityResult? _availability;
   XFile? _buktiBayar;
+  bool _isCheckingAvailability = false;
   bool _isSubmitting = false;
   String? _errorMessage;
   String? _successMessage;
@@ -61,6 +64,8 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       }
       _errorMessage = null;
       _successMessage = null;
+      _availability = null;
+      _buktiBayar = null;
     });
   }
 
@@ -79,7 +84,7 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
     });
   }
 
-  Future<void> _submit(UnitHomestay unit) async {
+  bool _validateTanggal() {
     final checkin = _checkin;
     final checkout = _checkout;
 
@@ -87,12 +92,82 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       setState(() {
         _errorMessage = 'Pilih tanggal check-in dan check-out.';
       });
-      return;
+      return false;
     }
 
     if (!checkout.isAfter(checkin)) {
       setState(() {
         _errorMessage = 'Tanggal check-out harus setelah check-in.';
+      });
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<void> _checkAvailability(UnitHomestay unit) async {
+    if (!_validateTanggal()) return;
+
+    setState(() {
+      _isCheckingAvailability = true;
+      _errorMessage = null;
+      _successMessage = null;
+      _availability = null;
+      _buktiBayar = null;
+    });
+
+    try {
+      final result = await ref
+          .read(reservationRepositoryProvider)
+          .checkAvailability(
+            idUnit: unit.idUnit,
+            checkin: _checkin!,
+            checkout: _checkout!,
+          );
+
+      if (!mounted) return;
+      setState(() {
+        _availability = result;
+        if (!result.available) {
+          _errorMessage = result.message;
+        } else {
+          _successMessage =
+              'Tanggal tersedia. Total tagihan ${formatRupiah(result.totalTagihan)}.';
+        }
+      });
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = _messageFromError(err);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingAvailability = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submit(UnitHomestay unit) async {
+    if (!_validateTanggal()) return;
+
+    if (_availability?.available != true) {
+      setState(() {
+        _errorMessage = 'Cek ketersediaan tanggal terlebih dahulu.';
+      });
+      return;
+    }
+
+    final checkin = _checkin;
+    final checkout = _checkout;
+    final buktiBayar = _buktiBayar;
+
+    if (checkin == null || checkout == null) return;
+
+    if (buktiBayar == null) {
+      setState(() {
+        _errorMessage = 'Unggah bukti bayar terlebih dahulu.';
       });
       return;
     }
@@ -111,19 +186,15 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
         checkout: checkout,
       );
 
-      final buktiBayar = _buktiBayar;
-      if (buktiBayar != null) {
-        reservasi = await repository.uploadBuktiBayar(
-          idReservasi: reservasi.idReservasi,
-          filePath: buktiBayar.path,
-        );
-      }
+      reservasi = await repository.uploadBuktiBayar(
+        idReservasi: reservasi.idReservasi,
+        filePath: buktiBayar.path,
+      );
 
       if (!mounted) return;
       setState(() {
-        _successMessage = buktiBayar == null
-            ? 'Reservasi ${reservasi.idReservasi} dibuat. Silakan unggah bukti bayar agar masuk verifikasi pemilik.'
-            : 'Reservasi ${reservasi.idReservasi} dikirim dan menunggu konfirmasi pemilik.';
+        _successMessage =
+            'Reservasi ${reservasi.idReservasi} dikirim dan menunggu konfirmasi pemilik.';
       });
     } catch (err) {
       if (!mounted) return;
@@ -158,13 +229,16 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
           unit: data,
           checkin: _checkin,
           checkout: _checkout,
+          availability: _availability,
           buktiBayar: _buktiBayar,
           jumlahMalam: _jumlahMalam(),
+          isCheckingAvailability: _isCheckingAvailability,
           isSubmitting: _isSubmitting,
           errorMessage: _errorMessage,
           successMessage: _successMessage,
           onPickCheckin: () => _pickDate(isCheckin: true),
           onPickCheckout: () => _pickDate(isCheckin: false),
+          onCheckAvailability: () => _checkAvailability(data),
           onPickBukti: _pickBuktiBayar,
           onSubmit: () => _submit(data),
         ),
@@ -182,11 +256,14 @@ class _ReservasiForm extends StatelessWidget {
     required this.unit,
     required this.checkin,
     required this.checkout,
+    required this.availability,
     required this.buktiBayar,
     required this.jumlahMalam,
+    required this.isCheckingAvailability,
     required this.isSubmitting,
     required this.onPickCheckin,
     required this.onPickCheckout,
+    required this.onCheckAvailability,
     required this.onPickBukti,
     required this.onSubmit,
     this.errorMessage,
@@ -196,19 +273,25 @@ class _ReservasiForm extends StatelessWidget {
   final UnitHomestay unit;
   final DateTime? checkin;
   final DateTime? checkout;
+  final AvailabilityResult? availability;
   final XFile? buktiBayar;
   final int jumlahMalam;
+  final bool isCheckingAvailability;
   final bool isSubmitting;
   final String? errorMessage;
   final String? successMessage;
   final VoidCallback onPickCheckin;
   final VoidCallback onPickCheckout;
+  final VoidCallback onCheckAvailability;
   final VoidCallback onPickBukti;
   final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
-    final totalTagihan = unit.hargaPerMalam * jumlahMalam;
+    final isBusy = isCheckingAvailability || isSubmitting;
+    final isAvailable = availability?.available == true;
+    final totalTagihan =
+        availability?.totalTagihan ?? unit.hargaPerMalam * jumlahMalam;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -252,13 +335,27 @@ class _ReservasiForm extends StatelessWidget {
         _DateButton(
           label: 'Check-in',
           value: checkin == null ? 'Pilih tanggal' : formatTanggal(checkin!),
-          onPressed: isSubmitting ? null : onPickCheckin,
+          onPressed: isBusy ? null : onPickCheckin,
         ),
         const SizedBox(height: 12),
         _DateButton(
           label: 'Check-out',
           value: checkout == null ? 'Pilih tanggal' : formatTanggal(checkout!),
-          onPressed: isSubmitting ? null : onPickCheckout,
+          onPressed: isBusy ? null : onPickCheckout,
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: isBusy ? null : onCheckAvailability,
+          child: isCheckingAvailability
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.card,
+                  ),
+                )
+              : const Text('Cek Ketersediaan'),
         ),
         const SizedBox(height: 16),
         Card(
@@ -290,21 +387,46 @@ class _ReservasiForm extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: isSubmitting ? null : onPickBukti,
-          icon: const Icon(Icons.upload_file_outlined),
-          label: Text(
-            buktiBayar == null
-                ? 'Pilih Bukti Bayar'
-                : 'Bukti Dipilih: ${buktiBayar!.name}',
+        if (!isAvailable && availability?.available == false) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: isBusy ? null : onPickCheckin,
+            icon: const Icon(Icons.event_repeat_outlined),
+            label: const Text('Pilih Tanggal Lain'),
           ),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Bukti bayar boleh diunggah sekarang agar reservasi langsung masuk verifikasi pemilik.',
-          style: TextStyle(color: AppColors.grayMuted),
-        ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: isBusy ? null : () => context.go('/'),
+            icon: const Icon(Icons.home_work_outlined),
+            label: const Text('Pilih Unit Lain'),
+          ),
+        ],
+        if (isAvailable) ...[
+          const SizedBox(height: 16),
+          const Text(
+            'Pembayaran',
+            style: TextStyle(
+              color: AppColors.grayText,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: isBusy ? null : onPickBukti,
+            icon: const Icon(Icons.upload_file_outlined),
+            label: Text(
+              buktiBayar == null
+                  ? 'Pilih Bukti Bayar'
+                  : 'Bukti Dipilih: ${buktiBayar!.name}',
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Unggah bukti bayar agar reservasi masuk verifikasi pemilik.',
+            style: TextStyle(color: AppColors.grayMuted),
+          ),
+        ],
         if (errorMessage != null) ...[
           const SizedBox(height: 14),
           _MessageBox(message: errorMessage!, isError: true),
@@ -314,19 +436,20 @@ class _ReservasiForm extends StatelessWidget {
           _MessageBox(message: successMessage!, isError: false),
         ],
         const SizedBox(height: 18),
-        ElevatedButton(
-          onPressed: isSubmitting ? null : onSubmit,
-          child: isSubmitting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.card,
-                  ),
-                )
-              : const Text('Kirim Reservasi'),
-        ),
+        if (isAvailable)
+          ElevatedButton(
+            onPressed: isBusy ? null : onSubmit,
+            child: isSubmitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.card,
+                    ),
+                  )
+                : const Text('Kirim Bukti Pembayaran'),
+          ),
       ],
     );
   }
