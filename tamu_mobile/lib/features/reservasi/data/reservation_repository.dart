@@ -55,6 +55,7 @@ class AvailabilityResult {
     required this.jumlahMalam,
     required this.totalTagihan,
     this.reason,
+    this.overlap,
   });
 
   final bool available;
@@ -62,14 +63,43 @@ class AvailabilityResult {
   final int jumlahMalam;
   final int totalTagihan;
   final String? reason;
+  final ReservationOverlap? overlap;
 
   factory AvailabilityResult.fromJson(Map<String, dynamic> json) {
+    final overlapJson = json['overlap'];
+
     return AvailabilityResult(
       available: json['available'] == true,
       message: json['message'] as String? ?? 'Status ketersediaan diterima.',
       jumlahMalam: json['jumlah_malam'] as int? ?? 0,
       totalTagihan: json['total_tagihan'] as int? ?? 0,
       reason: json['reason'] as String?,
+      overlap: overlapJson is Map<String, dynamic>
+          ? ReservationOverlap.fromJson(overlapJson)
+          : null,
+    );
+  }
+}
+
+class ReservationOverlap {
+  const ReservationOverlap({
+    required this.idReservasi,
+    required this.tglCheckin,
+    required this.tglCheckout,
+    required this.statusPesanan,
+  });
+
+  final String idReservasi;
+  final DateTime tglCheckin;
+  final DateTime tglCheckout;
+  final String statusPesanan;
+
+  factory ReservationOverlap.fromJson(Map<String, dynamic> json) {
+    return ReservationOverlap(
+      idReservasi: json['id_reservasi'] as String,
+      tglCheckin: DateTime.parse(json['tgl_checkin'] as String),
+      tglCheckout: DateTime.parse(json['tgl_checkout'] as String),
+      statusPesanan: json['status_pesanan'] as String,
     );
   }
 }

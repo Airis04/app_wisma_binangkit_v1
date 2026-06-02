@@ -132,7 +132,7 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       setState(() {
         _availability = result;
         if (!result.available) {
-          _errorMessage = result.message;
+          _errorMessage = _availabilityMessage(result);
         } else {
           _successMessage =
               'Tanggal tersedia. Total tagihan ${formatRupiah(result.totalTagihan)}.';
@@ -244,6 +244,19 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       return (err.error as ApiException).message;
     }
     return 'Gagal membuat reservasi. Silakan coba lagi.';
+  }
+
+  String _availabilityMessage(AvailabilityResult result) {
+    if (result.reason == 'UNIT_PERAWATAN') {
+      return 'Unit ini sedang perawatan dan belum bisa dipesan. Silakan pilih unit lain.';
+    }
+
+    final overlap = result.overlap;
+    if (result.reason == 'SLOT_TERISI' && overlap != null) {
+      return 'Unit ini sudah terisi pada ${formatTanggalPendek(overlap.tglCheckin)} sampai ${formatTanggalPendek(overlap.tglCheckout)}. Pilih tanggal lain atau cari unit lain untuk tanggal tersebut.';
+    }
+
+    return result.message;
   }
 
   Future<void> _showPaymentSuccessDialog(String idReservasi) async {
@@ -370,44 +383,27 @@ class _ReservasiForm extends StatelessWidget {
     final totalTagihan =
         availability?.totalTagihan ?? unit.hargaPerMalam * jumlahMalam;
 
+    if (!unit.bisaDipesan) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _UnitSummaryCard(unit: unit),
+          const SizedBox(height: 16),
+          const _BlockedUnitCard(),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () => context.go('/'),
+            icon: const Icon(Icons.home_work_outlined),
+            label: const Text('Pilih Unit Lain'),
+          ),
+        ],
+      );
+    }
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: AppColors.grayBorder),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  unit.namaUnit,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.grayText,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${unit.kategori} • Kapasitas ${unit.kapasitas} orang',
-                  style: const TextStyle(color: AppColors.grayMuted),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '${formatRupiah(unit.hargaPerMalam)} / malam',
-                  style: const TextStyle(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _UnitSummaryCard(unit: unit),
         const SizedBox(height: 16),
         _StepHeader(isPaymentStep: isPaymentStep),
         const SizedBox(height: 16),
@@ -517,6 +513,94 @@ class _ReservasiForm extends StatelessWidget {
                 : const Text('Kirim Bukti Pembayaran'),
           ),
       ],
+    );
+  }
+}
+
+class _UnitSummaryCard extends StatelessWidget {
+  const _UnitSummaryCard({required this.unit});
+
+  final UnitHomestay unit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: AppColors.grayBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              unit.namaUnit,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppColors.grayText,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${unit.kategori} • Kapasitas ${unit.kapasitas} orang',
+              style: const TextStyle(color: AppColors.grayMuted),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${formatRupiah(unit.hargaPerMalam)} / malam',
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BlockedUnitCard extends StatelessWidget {
+  const _BlockedUnitCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: AppColors.merah),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.build_circle_outlined, color: AppColors.merah),
+            SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Unit sedang perawatan',
+                    style: TextStyle(
+                      color: AppColors.merah,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Unit ini sementara tidak bisa dipesan karena sedang ada perawatan. Silakan pilih unit lain yang tersedia.',
+                    style: TextStyle(color: AppColors.grayMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

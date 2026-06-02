@@ -1,15 +1,10 @@
 import prisma from "@/lib/prisma";
 import { jsonError, jsonOk } from "@/lib/mobile/api-response";
+import { parseDateOnly, STATUS_AKTIF_OVERLAP } from "@/lib/mobile/reservations";
+import { formatUnitMobile, todayDateOnly } from "@/lib/mobile/units";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function pecahFasilitas(fasilitas: string) {
-  return fasilitas
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 
 export async function GET(
   _request: Request,
@@ -22,6 +17,8 @@ export async function GET(
   }
 
   try {
+    const today = parseDateOnly(todayDateOnly());
+
     const unit = await prisma.unit.findUnique({
       where: { id_unit },
       include: {
@@ -29,6 +26,21 @@ export async function GET(
           orderBy: { urutan: "asc" },
           select: { id_foto: true, file_path: true, urutan: true },
         },
+        reservations: today
+          ? {
+              where: {
+                status_pesanan: { in: [...STATUS_AKTIF_OVERLAP] },
+                tgl_checkin: { lte: today },
+                tgl_checkout: { gt: today },
+              },
+              select: {
+                id_reservasi: true,
+                tgl_checkin: true,
+                tgl_checkout: true,
+                status_pesanan: true,
+              },
+            }
+          : false,
       },
     });
 
@@ -36,17 +48,7 @@ export async function GET(
       return jsonError("Unit tidak ditemukan", 404);
     }
 
-    return jsonOk({
-      id_unit: unit.id_unit,
-      nama_unit: unit.nama_unit,
-      kategori: unit.kategori,
-      harga_per_malam: unit.harga_per_malam,
-      kapasitas: unit.kapasitas,
-      fasilitas: pecahFasilitas(unit.fasilitas),
-      foto_unit: unit.foto_unit,
-      status_unit: unit.status_unit,
-      fotos: unit.fotos,
-    });
+    return jsonOk(formatUnitMobile(unit));
   } catch (err) {
     console.error("Gagal mengambil detail unit:", err);
     return jsonError("Gagal mengambil detail unit", 500);

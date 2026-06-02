@@ -33,7 +33,9 @@ class DetailUnitPage extends ConsumerWidget {
               onPressed: data.bisaDipesan
                   ? () => context.push('/unit/${data.idUnit}/pesan')
                   : null,
-              child: const Text('Pesan Unit Ini'),
+              child: Text(
+                data.bisaDipesan ? 'Pesan Unit Ini' : 'Unit Tidak Bisa Dipesan',
+              ),
             ),
           ),
         ),
@@ -119,6 +121,25 @@ class _DetailContent extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              if (unit.statusUnit == 'Perawatan') ...[
+                const SizedBox(height: 16),
+                const _StatusInfoCard(
+                  icon: Icons.build_circle_outlined,
+                  title: 'Unit sedang perawatan',
+                  message:
+                      'Unit ini sementara tidak bisa dipesan karena sedang ada perawatan. Silakan pilih unit lain yang tersedia.',
+                  isError: true,
+                ),
+              ] else if (unit.statusUnit == 'Terisi') ...[
+                const SizedBox(height: 16),
+                const _StatusInfoCard(
+                  icon: Icons.event_busy_outlined,
+                  title: 'Unit terisi hari ini',
+                  message:
+                      'Unit ini sedang terisi untuk tanggal hari ini. Kamu tetap bisa menekan Pesan Unit Ini untuk memilih tanggal lain.',
+                  isError: false,
+                ),
+              ],
               const SizedBox(height: 24),
               const Text(
                 'Fasilitas',
@@ -152,6 +173,57 @@ class _DetailContent extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StatusInfoCard extends StatelessWidget {
+  const _StatusInfoCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.isError,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isError ? AppColors.merah : AppColors.navy;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(color: color, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: const TextStyle(color: AppColors.grayMuted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
