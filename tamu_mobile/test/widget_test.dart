@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:tamu_mobile/app.dart';
+import 'package:tamu_mobile/features/katalog/data/unit_repository.dart';
 
 void main() {
   testWidgets('App renders without crashing', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: WismaBinangkitApp(),
+      ProviderScope(
+        overrides: [unitListProvider.overrideWith((ref) async => const [])],
+        child: const WismaBinangkitApp(),
       ),
     );
 
