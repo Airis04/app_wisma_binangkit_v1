@@ -36,7 +36,14 @@ class KatalogPage extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
               itemBuilder: (context, index) {
-                return _UnitCard(unit: data[index]);
+                final unit = data[index];
+                return _UnitCard(
+                  unit: unit,
+                  onOpen: () {
+                    ref.invalidate(unitDetailProvider(unit.idUnit));
+                    context.push('/unit/${unit.idUnit}');
+                  },
+                );
               },
               separatorBuilder: (_, __) => const SizedBox(height: 14),
               itemCount: data.length,
@@ -54,9 +61,10 @@ class KatalogPage extends ConsumerWidget {
 }
 
 class _UnitCard extends StatelessWidget {
-  const _UnitCard({required this.unit});
+  const _UnitCard({required this.unit, required this.onOpen});
 
   final UnitHomestay unit;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +77,7 @@ class _UnitCard extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.push('/unit/${unit.idUnit}'),
+        onTap: onOpen,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

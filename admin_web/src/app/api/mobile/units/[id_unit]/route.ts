@@ -48,7 +48,7 @@ export async function GET(
       return jsonError("Unit tidak ditemukan", 404);
     }
 
-    return jsonOk(formatUnitMobile(unit));
+    return jsonOk(formatUnitMobile(unit, { hitungStatusHariIni: true }));
   } catch (err) {
     console.error("Gagal mengambil detail unit:", err);
     return jsonError("Gagal mengambil detail unit", 500);

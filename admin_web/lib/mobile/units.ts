@@ -18,11 +18,27 @@ export function pecahFasilitas(fasilitas: string) {
 }
 
 export function todayDateOnly() {
-  return toDateOnly(new Date());
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (!year || !month || !day) return toDateOnly(new Date());
+  return `${year}-${month}-${day}`;
 }
 
-export function getMobileStatusUnit(unit: MobileUnit) {
+export function getMobileStatusUnit(
+  unit: MobileUnit,
+  options: { hitungStatusHariIni?: boolean } = {}
+) {
   if (unit.status_unit === "Perawatan") return "Perawatan";
+  if (!options.hitungStatusHariIni) return unit.status_unit;
 
   const today = parseDateOnly(todayDateOnly());
   if (!today) return "Tersedia";
@@ -38,7 +54,10 @@ export function getMobileStatusUnit(unit: MobileUnit) {
   return isTerisiHariIni ? "Terisi" : "Tersedia";
 }
 
-export function formatUnitMobile(unit: MobileUnit) {
+export function formatUnitMobile(
+  unit: MobileUnit,
+  options: { hitungStatusHariIni?: boolean } = {}
+) {
   return {
     id_unit: unit.id_unit,
     nama_unit: unit.nama_unit,
@@ -47,7 +66,7 @@ export function formatUnitMobile(unit: MobileUnit) {
     kapasitas: unit.kapasitas,
     fasilitas: pecahFasilitas(unit.fasilitas),
     foto_unit: unit.foto_unit,
-    status_unit: getMobileStatusUnit(unit),
+    status_unit: getMobileStatusUnit(unit, options),
     fotos: unit.fotos,
   };
 }

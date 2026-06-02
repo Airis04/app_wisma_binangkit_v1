@@ -19,7 +19,10 @@ class DetailUnitPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Unit')),
       body: unit.when(
-        data: (data) => _DetailContent(unit: data),
+        data: (data) => RefreshIndicator(
+          onRefresh: () => ref.refresh(unitDetailProvider(idUnit).future),
+          child: _DetailContent(unit: data),
+        ),
         error: (error, _) => _ErrorState(
           onRetry: () => ref.invalidate(unitDetailProvider(idUnit)),
         ),
