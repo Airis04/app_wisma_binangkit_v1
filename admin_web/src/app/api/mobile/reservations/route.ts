@@ -5,9 +5,8 @@ import { jsonError, jsonOk } from "@/lib/mobile/api-response";
 import { requireMobileUser } from "@/lib/mobile/auth";
 import {
   formatReservasiMobile,
-  hitungMalam,
-  parseDateOnly,
   STATUS_AKTIF_OVERLAP,
+  validasiInputTanggalReservasi,
 } from "@/lib/mobile/reservations";
 
 export const runtime = "nodejs";
@@ -54,27 +53,9 @@ export async function POST(request: Request) {
     return jsonError("Body JSON tidak valid");
   }
 
-  const checkin = parseDateOnly(parsed.tgl_checkin);
-  const checkout = parseDateOnly(parsed.tgl_checkout);
-
-  if (!checkin || !checkout) {
-    return jsonError("Tanggal wajib memakai format YYYY-MM-DD");
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  if (checkin < today) {
-    return jsonError("Tanggal check-in tidak boleh sebelum hari ini");
-  }
-
-  if (checkout <= checkin) {
-    return jsonError("Tanggal check-out harus setelah check-in");
-  }
-
-  const jumlahMalam = hitungMalam(checkin, checkout);
-  if (jumlahMalam <= 0) {
-    return jsonError("Durasi reservasi tidak valid");
+  const tanggal = validasiInputTanggalReservasi(parsed);
+  if (!tanggal.ok) {
+    return jsonError(tanggal.message);
   }
 
   try {
@@ -104,8 +85,8 @@ export async function POST(request: Request) {
         where: {
           id_unit: parsed.id_unit,
           status_pesanan: { in: [...STATUS_AKTIF_OVERLAP] },
-          tgl_checkin: { lt: checkout },
-          tgl_checkout: { gt: checkin },
+          tgl_checkin: { lt: tanggal.checkout },
+          tgl_checkout: { gt: tanggal.checkin },
         },
         select: { id_reservasi: true },
       });
@@ -120,9 +101,9 @@ export async function POST(request: Request) {
           id_reservasi: idReservasi,
           id_user: auth.user.id_user,
           id_unit: parsed.id_unit,
-          tgl_checkin: checkin,
-          tgl_checkout: checkout,
-          total_tagihan: unit.harga_per_malam * jumlahMalam,
+          tgl_checkin: tanggal.checkin,
+          tgl_checkout: tanggal.checkout,
+          total_tagihan: unit.harga_per_malam * tanggal.jumlah_malam,
           bukti_bayar: null,
           status_pesanan: "Menunggu Pembayaran",
         },
