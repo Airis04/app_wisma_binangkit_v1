@@ -77,6 +77,27 @@ class AuthRepository {
     return _handleAuthResponse(response.data);
   }
 
+  Future<String> resetPassword({
+    required String email,
+    required String noTelepon,
+    required String passwordBaru,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/mobile/auth/forgot-password',
+      data: {
+        'email': email,
+        'no_telepon': noTelepon,
+        'password_baru': passwordBaru,
+      },
+    );
+
+    final data = _readData(response.data);
+    final message = data['message'];
+    return message is String
+        ? message
+        : 'Kata sandi berhasil diperbarui. Silakan masuk kembali.';
+  }
+
   Future<MobileUser> me() async {
     final response = await _dio.get<Map<String, dynamic>>('/mobile/auth/me');
     final data = _readData(response.data);

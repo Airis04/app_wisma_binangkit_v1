@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/auth/application/auth_controller.dart';
+import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/katalog/presentation/detail_unit_page.dart';
 import '../features/katalog/presentation/katalog_page.dart';
@@ -18,20 +19,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: _AuthRefreshListenable(ref),
     redirect: (context, state) {
       final isLoginRoute = state.uri.path == '/login';
+      final isForgotPasswordRoute = state.uri.path == '/lupa-password';
+      final isPublicAuthRoute = isLoginRoute || isForgotPasswordRoute;
 
       if (authState.isChecking) {
-        return isLoginRoute ? null : '/login';
+        return isPublicAuthRoute ? null : '/login';
       }
 
       if (!authState.isLoggedIn) {
-        return isLoginRoute ? null : '/login';
+        return isPublicAuthRoute ? null : '/login';
       }
 
-      if (isLoginRoute) return '/';
+      if (isPublicAuthRoute) return '/';
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(
+        path: '/lupa-password',
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
       ShellRoute(
         builder: (context, state, child) => _MainShell(child: child),
         routes: [

@@ -238,6 +238,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 },
                                 onFieldSubmitted: (_) => _submit(),
                               ),
+                            ] else ...[
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: authState.isLoading
+                                      ? null
+                                      : () => context.push('/lupa-password'),
+                                  child: const Text('Lupa Password?'),
+                                ),
+                              ),
                             ],
                             if (authState.errorMessage != null) ...[
                               const SizedBox(height: 14),
