@@ -85,6 +85,7 @@ export async function requireMobileUser(request: Request) {
       nama_lengkap: true,
       email: true,
       no_telepon: true,
+      foto_profil: true,
       role: true,
     },
   });

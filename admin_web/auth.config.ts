@@ -17,7 +17,9 @@ export const authConfig = {
         pathname.startsWith("/pemesanan") ||
         pathname.startsWith("/unit") ||
         pathname.startsWith("/keuangan") ||
-        pathname.startsWith("/pengaturan");
+        pathname.startsWith("/pembayaran") ||
+        pathname.startsWith("/pengaturan") ||
+        pathname.startsWith("/akun");
 
       if (isProtected) {
         return isLoggedIn;
@@ -34,6 +36,7 @@ export const authConfig = {
         token.id_user = user.id_user;
         token.role = user.role;
         token.nama_lengkap = user.nama_lengkap;
+        token.foto_profil = user.foto_profil;
       }
       return token;
     },
@@ -42,6 +45,7 @@ export const authConfig = {
         session.user.id_user = token.id_user as string;
         session.user.role = token.role as string;
         session.user.nama_lengkap = token.nama_lengkap as string;
+        session.user.foto_profil = token.foto_profil as string | null;
       }
       return session;
     },

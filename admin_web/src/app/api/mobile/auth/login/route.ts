@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       nama_lengkap: user.nama_lengkap,
       email: user.email,
       no_telepon: user.no_telepon,
+      foto_profil: user.foto_profil,
       role: user.role,
     },
   });

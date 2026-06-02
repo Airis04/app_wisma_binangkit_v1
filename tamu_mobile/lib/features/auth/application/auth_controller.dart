@@ -119,6 +119,46 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.withoutUser();
   }
 
+  Future<bool> updateAccount({
+    required String namaLengkap,
+    required String noTelepon,
+    String? passwordLama,
+    String? passwordBaru,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final user = await _repository.updateAccount(
+        namaLengkap: namaLengkap.trim(),
+        noTelepon: noTelepon.trim(),
+        passwordLama: passwordLama,
+        passwordBaru: passwordBaru,
+      );
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+      return true;
+    } catch (err) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: _messageFromError(err),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> updateProfilePhoto({required String filePath}) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final user = await _repository.updateProfilePhoto(filePath: filePath);
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+      return true;
+    } catch (err) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: _messageFromError(err),
+      );
+      return false;
+    }
+  }
+
   String _messageFromError(Object err) {
     if (err is ApiException) {
       return err.message;

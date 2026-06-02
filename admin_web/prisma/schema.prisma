@@ -14,6 +14,7 @@ model User {
   email        String   @unique @db.VarChar(30)
   password     String   @db.VarChar(100)
   no_telepon   String   @db.VarChar(15)
+  foto_profil  String?  @db.VarChar(255)
   role         String   @db.VarChar(10)
   created_at   DateTime @default(now()) @db.Timestamp()
 

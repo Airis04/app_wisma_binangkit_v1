@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings, UserCircle } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -11,14 +13,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserCircle } from "lucide-react";
 
 type Props = {
   namaLengkap: string;
   email: string;
+  fotoProfil?: string | null;
 };
 
-export default function UserMenu({ namaLengkap, email }: Props) {
+export default function UserMenu({ namaLengkap, email, fotoProfil }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -26,7 +28,17 @@ export default function UserMenu({ namaLengkap, email }: Props) {
           className="text-gray-500 hover:text-[#1E3A8A] transition-colors"
           aria-label="Menu pengguna"
         >
-          <UserCircle size={28} />
+          {fotoProfil ? (
+            <Image
+              src={fotoProfil}
+              alt={namaLengkap}
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+          ) : (
+            <UserCircle size={28} />
+          )}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -39,6 +51,12 @@ export default function UserMenu({ namaLengkap, email }: Props) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/akun" className="cursor-pointer">
+            <Settings size={16} className="mr-2" />
+            Pengaturan Akun
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => signOut({ callbackUrl: "/login" })}
           className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"

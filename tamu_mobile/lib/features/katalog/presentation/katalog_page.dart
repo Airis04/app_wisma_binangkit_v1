@@ -42,8 +42,8 @@ class _KatalogPageState extends ConsumerState<KatalogPage> {
         title: const Text('Katalog Unit'),
         actions: [
           IconButton(
-            tooltip: 'Masuk',
-            onPressed: () => context.push('/login'),
+            tooltip: 'Pengaturan Akun',
+            onPressed: () => context.push('/pengaturan'),
             icon: const Icon(Icons.account_circle_outlined),
           ),
         ],

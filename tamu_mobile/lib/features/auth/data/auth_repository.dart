@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/env.dart';
 import '../../../shared/api/api_exception.dart';
 import '../../../shared/api/dio_client.dart';
 import '../../../shared/auth/token_storage.dart';
@@ -12,6 +13,7 @@ class MobileUser {
     required this.email,
     required this.noTelepon,
     required this.role,
+    this.fotoProfil,
   });
 
   final String idUser;
@@ -19,6 +21,7 @@ class MobileUser {
   final String email;
   final String noTelepon;
   final String role;
+  final String? fotoProfil;
 
   factory MobileUser.fromJson(Map<String, dynamic> json) {
     return MobileUser(
@@ -27,7 +30,18 @@ class MobileUser {
       email: json['email'] as String,
       noTelepon: json['no_telepon'] as String,
       role: json['role'] as String,
+      fotoProfil: json['foto_profil'] as String?,
     );
+  }
+
+  String? get fotoProfilUrl {
+    final path = fotoProfil;
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+    final origin = AppEnv.apiBaseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+    if (path.startsWith('/')) return '$origin$path';
+    return '$origin/$path';
   }
 }
 
@@ -100,6 +114,43 @@ class AuthRepository {
 
   Future<MobileUser> me() async {
     final response = await _dio.get<Map<String, dynamic>>('/mobile/auth/me');
+    final data = _readData(response.data);
+    return MobileUser.fromJson(data['user'] as Map<String, dynamic>);
+  }
+
+  Future<MobileUser> updateAccount({
+    required String namaLengkap,
+    required String noTelepon,
+    String? passwordLama,
+    String? passwordBaru,
+  }) async {
+    final response = await _dio.patch<Map<String, dynamic>>(
+      '/mobile/auth/me',
+      data: {
+        'nama_lengkap': namaLengkap,
+        'no_telepon': noTelepon,
+        if (passwordLama != null && passwordLama.isNotEmpty)
+          'password_lama': passwordLama,
+        if (passwordBaru != null && passwordBaru.isNotEmpty)
+          'password_baru': passwordBaru,
+      },
+    );
+
+    final data = _readData(response.data);
+    return MobileUser.fromJson(data['user'] as Map<String, dynamic>);
+  }
+
+  Future<MobileUser> updateProfilePhoto({required String filePath}) async {
+    final formData = FormData.fromMap({
+      'foto_profil': await MultipartFile.fromFile(filePath),
+    });
+
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/mobile/auth/me/foto',
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+
     final data = _readData(response.data);
     return MobileUser.fromJson(data['user'] as Map<String, dynamic>);
   }
