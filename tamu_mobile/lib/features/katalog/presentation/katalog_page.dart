@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../config/theme.dart';
 import '../../../shared/utils/format.dart';
+import '../../auth/application/auth_controller.dart';
 import '../data/unit_repository.dart';
 
 class KatalogPage extends ConsumerStatefulWidget {
@@ -36,6 +37,7 @@ class _KatalogPageState extends ConsumerState<KatalogPage> {
   @override
   Widget build(BuildContext context) {
     final units = ref.watch(unitListProvider);
+    final user = ref.watch(authControllerProvider).user;
 
     return Scaffold(
       appBar: AppBar(
@@ -44,7 +46,7 @@ class _KatalogPageState extends ConsumerState<KatalogPage> {
           IconButton(
             tooltip: 'Pengaturan Akun',
             onPressed: () => context.push('/pengaturan'),
-            icon: const Icon(Icons.account_circle_outlined),
+            icon: _ProfileIcon(photoUrl: user?.fotoProfilUrl),
           ),
         ],
       ),
@@ -78,6 +80,32 @@ class _KatalogPageState extends ConsumerState<KatalogPage> {
           onRetry: () => ref.invalidate(unitListProvider),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+}
+
+class _ProfileIcon extends StatelessWidget {
+  const _ProfileIcon({required this.photoUrl});
+
+  final String? photoUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (photoUrl == null) {
+      return const Icon(Icons.account_circle_outlined);
+    }
+
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: photoUrl!,
+          fit: BoxFit.cover,
+          errorWidget: (context, url, error) =>
+              const Icon(Icons.account_circle_outlined),
+        ),
       ),
     );
   }

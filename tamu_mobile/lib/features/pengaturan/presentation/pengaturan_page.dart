@@ -193,6 +193,22 @@ class _PengaturanPageState extends ConsumerState<PengaturanPage> {
             ),
             const SizedBox(height: 14),
             _SectionCard(
+              title: 'Informasi Akun',
+              children: [
+                _InfoTile(
+                  icon: Icons.email_outlined,
+                  label: 'Email',
+                  value: user?.email ?? '-',
+                ),
+                _InfoTile(
+                  icon: Icons.verified_user_outlined,
+                  label: 'Role',
+                  value: user?.role ?? '-',
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _SectionCard(
               title: 'Ganti Kata Sandi',
               children: [
                 TextFormField(
@@ -240,6 +256,22 @@ class _PengaturanPageState extends ConsumerState<PengaturanPage> {
                     prefixIcon: Icon(Icons.lock_outline),
                   ),
                   validator: _confirmPasswordValidator,
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _SectionCard(
+              title: 'Aplikasi',
+              children: const [
+                _InfoTile(
+                  icon: Icons.home_work_outlined,
+                  label: 'Aplikasi',
+                  value: 'Wisma Binangkit Mobile',
+                ),
+                _InfoTile(
+                  icon: Icons.payment_outlined,
+                  label: 'Pembayaran',
+                  value: 'Transfer manual dan verifikasi pemilik',
                 ),
               ],
             ),
@@ -376,6 +408,48 @@ class _SectionCard extends StatelessWidget {
             ...children,
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: AppColors.grayMuted),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 112,
+            child: Text(
+              label,
+              style: const TextStyle(color: AppColors.grayMuted),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.grayText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
