@@ -24,6 +24,7 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
   DateTime? _checkout;
   AvailabilityResult? _availability;
   XFile? _buktiBayar;
+  bool _isPaymentStep = false;
   bool _isCheckingAvailability = false;
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -66,6 +67,7 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       _successMessage = null;
       _availability = null;
       _buktiBayar = null;
+      _isPaymentStep = false;
     });
   }
 
@@ -114,6 +116,7 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       _successMessage = null;
       _availability = null;
       _buktiBayar = null;
+      _isPaymentStep = false;
     });
 
     try {
@@ -147,6 +150,29 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
         });
       }
     }
+  }
+
+  void _continueToPayment() {
+    if (_availability?.available != true) {
+      setState(() {
+        _errorMessage = 'Cek ketersediaan tanggal terlebih dahulu.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isPaymentStep = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+  }
+
+  void _backToDateStep() {
+    setState(() {
+      _isPaymentStep = false;
+      _errorMessage = null;
+      _successMessage = null;
+    });
   }
 
   Future<void> _submit(UnitHomestay unit) async {
@@ -232,6 +258,7 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
           availability: _availability,
           buktiBayar: _buktiBayar,
           jumlahMalam: _jumlahMalam(),
+          isPaymentStep: _isPaymentStep,
           isCheckingAvailability: _isCheckingAvailability,
           isSubmitting: _isSubmitting,
           errorMessage: _errorMessage,
@@ -239,6 +266,8 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
           onPickCheckin: () => _pickDate(isCheckin: true),
           onPickCheckout: () => _pickDate(isCheckin: false),
           onCheckAvailability: () => _checkAvailability(data),
+          onContinueToPayment: _continueToPayment,
+          onBackToDateStep: _backToDateStep,
           onPickBukti: _pickBuktiBayar,
           onSubmit: () => _submit(data),
         ),
@@ -259,11 +288,14 @@ class _ReservasiForm extends StatelessWidget {
     required this.availability,
     required this.buktiBayar,
     required this.jumlahMalam,
+    required this.isPaymentStep,
     required this.isCheckingAvailability,
     required this.isSubmitting,
     required this.onPickCheckin,
     required this.onPickCheckout,
     required this.onCheckAvailability,
+    required this.onContinueToPayment,
+    required this.onBackToDateStep,
     required this.onPickBukti,
     required this.onSubmit,
     this.errorMessage,
@@ -276,6 +308,7 @@ class _ReservasiForm extends StatelessWidget {
   final AvailabilityResult? availability;
   final XFile? buktiBayar;
   final int jumlahMalam;
+  final bool isPaymentStep;
   final bool isCheckingAvailability;
   final bool isSubmitting;
   final String? errorMessage;
@@ -283,6 +316,8 @@ class _ReservasiForm extends StatelessWidget {
   final VoidCallback onPickCheckin;
   final VoidCallback onPickCheckout;
   final VoidCallback onCheckAvailability;
+  final VoidCallback onContinueToPayment;
+  final VoidCallback onBackToDateStep;
   final VoidCallback onPickBukti;
   final VoidCallback onSubmit;
 
@@ -332,62 +367,47 @@ class _ReservasiForm extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _DateButton(
-          label: 'Check-in',
-          value: checkin == null ? 'Pilih tanggal' : formatTanggal(checkin!),
-          onPressed: isBusy ? null : onPickCheckin,
-        ),
-        const SizedBox(height: 12),
-        _DateButton(
-          label: 'Check-out',
-          value: checkout == null ? 'Pilih tanggal' : formatTanggal(checkout!),
-          onPressed: isBusy ? null : onPickCheckout,
-        ),
+        _StepHeader(isPaymentStep: isPaymentStep),
         const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: isBusy ? null : onCheckAvailability,
-          child: isCheckingAvailability
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.card,
-                  ),
-                )
-              : const Text('Cek Ketersediaan'),
-        ),
+        if (!isPaymentStep) ...[
+          _DateButton(
+            label: 'Check-in',
+            value: checkin == null ? 'Pilih tanggal' : formatTanggal(checkin!),
+            onPressed: isBusy ? null : onPickCheckin,
+          ),
+          const SizedBox(height: 12),
+          _DateButton(
+            label: 'Check-out',
+            value: checkout == null
+                ? 'Pilih tanggal'
+                : formatTanggal(checkout!),
+            onPressed: isBusy ? null : onPickCheckout,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: isBusy ? null : onCheckAvailability,
+            child: isCheckingAvailability
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.card,
+                    ),
+                  )
+                : const Text('Cek Ketersediaan'),
+          ),
+        ],
         const SizedBox(height: 16),
-        Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: AppColors.grayBorder),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Ringkasan Tagihan',
-                  style: TextStyle(
-                    color: AppColors.grayText,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                _SummaryRow(label: 'Jumlah malam', value: '$jumlahMalam malam'),
-                const SizedBox(height: 6),
-                _SummaryRow(
-                  label: 'Total tagihan',
-                  value: formatRupiah(totalTagihan),
-                  isStrong: true,
-                ),
-              ],
-            ),
-          ),
+        _SummaryCard(
+          jumlahMalam: jumlahMalam,
+          totalTagihan: totalTagihan,
+          checkin: checkin,
+          checkout: checkout,
         ),
-        if (!isAvailable && availability?.available == false) ...[
+        if (!isPaymentStep &&
+            !isAvailable &&
+            availability?.available == false) ...[
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: isBusy ? null : onPickCheckin,
@@ -401,17 +421,17 @@ class _ReservasiForm extends StatelessWidget {
             label: const Text('Pilih Unit Lain'),
           ),
         ],
-        if (isAvailable) ...[
+        if (!isPaymentStep && isAvailable) ...[
           const SizedBox(height: 16),
-          const Text(
-            'Pembayaran',
-            style: TextStyle(
-              color: AppColors.grayText,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
+          ElevatedButton(
+            onPressed: isBusy ? null : onContinueToPayment,
+            child: const Text('Lanjutkan'),
           ),
-          const SizedBox(height: 10),
+        ],
+        if (isPaymentStep) ...[
+          const SizedBox(height: 16),
+          _PaymentInstructionCard(totalTagihan: totalTagihan),
+          const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: isBusy ? null : onPickBukti,
             icon: const Icon(Icons.upload_file_outlined),
@@ -421,10 +441,11 @@ class _ReservasiForm extends StatelessWidget {
                   : 'Bukti Dipilih: ${buktiBayar!.name}',
             ),
           ),
-          const SizedBox(height: 12),
-          const Text(
-            'Unggah bukti bayar agar reservasi masuk verifikasi pemilik.',
-            style: TextStyle(color: AppColors.grayMuted),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: isBusy ? null : onBackToDateStep,
+            icon: const Icon(Icons.arrow_back_outlined),
+            label: const Text('Ubah Tanggal'),
           ),
         ],
         if (errorMessage != null) ...[
@@ -436,7 +457,7 @@ class _ReservasiForm extends StatelessWidget {
           _MessageBox(message: successMessage!, isError: false),
         ],
         const SizedBox(height: 18),
-        if (isAvailable)
+        if (isPaymentStep)
           ElevatedButton(
             onPressed: isBusy ? null : onSubmit,
             child: isSubmitting
@@ -450,6 +471,198 @@ class _ReservasiForm extends StatelessWidget {
                   )
                 : const Text('Kirim Bukti Pembayaran'),
           ),
+      ],
+    );
+  }
+}
+
+class _StepHeader extends StatelessWidget {
+  const _StepHeader({required this.isPaymentStep});
+
+  final bool isPaymentStep;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _StepPill(label: 'Tanggal', isActive: !isPaymentStep),
+        const Expanded(
+          child: Divider(color: AppColors.grayBorder, thickness: 1),
+        ),
+        _StepPill(label: 'Pembayaran', isActive: isPaymentStep),
+      ],
+    );
+  }
+}
+
+class _StepPill extends StatelessWidget {
+  const _StepPill({required this.label, required this.isActive});
+
+  final String label;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isActive ? AppColors.navy : AppColors.card,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isActive ? AppColors.navy : AppColors.grayBorder,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isActive ? AppColors.card : AppColors.grayMuted,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.jumlahMalam,
+    required this.totalTagihan,
+    required this.checkin,
+    required this.checkout,
+  });
+
+  final int jumlahMalam;
+  final int totalTagihan;
+  final DateTime? checkin;
+  final DateTime? checkout;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: AppColors.grayBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Ringkasan Tagihan',
+              style: TextStyle(
+                color: AppColors.grayText,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _SummaryRow(
+              label: 'Check-in',
+              value: checkin == null ? '-' : formatTanggalPendek(checkin!),
+            ),
+            const SizedBox(height: 6),
+            _SummaryRow(
+              label: 'Check-out',
+              value: checkout == null ? '-' : formatTanggalPendek(checkout!),
+            ),
+            const SizedBox(height: 6),
+            _SummaryRow(label: 'Jumlah malam', value: '$jumlahMalam malam'),
+            const SizedBox(height: 6),
+            _SummaryRow(
+              label: 'Total tagihan',
+              value: formatRupiah(totalTagihan),
+              isStrong: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PaymentInstructionCard extends StatelessWidget {
+  const _PaymentInstructionCard({required this.totalTagihan});
+
+  final int totalTagihan;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: AppColors.grayBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Instruksi Pembayaran Manual',
+              style: TextStyle(
+                color: AppColors.grayText,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const _PaymentInfoRow(label: 'Metode', value: 'Transfer Bank'),
+            const SizedBox(height: 8),
+            const _PaymentInfoRow(label: 'Bank', value: 'BCA'),
+            const SizedBox(height: 8),
+            const _PaymentInfoRow(label: 'No. Rekening', value: '1234567890'),
+            const SizedBox(height: 8),
+            const _PaymentInfoRow(label: 'Atas Nama', value: 'Wisma Binangkit'),
+            const SizedBox(height: 8),
+            _PaymentInfoRow(
+              label: 'Nominal',
+              value: formatRupiah(totalTagihan),
+              isStrong: true,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Setelah transfer, unggah bukti pembayaran. Pemilik akan mengecek manual lewat Dasbor dan menyetujui pesanan.',
+              style: TextStyle(color: AppColors.grayMuted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PaymentInfoRow extends StatelessWidget {
+  const _PaymentInfoRow({
+    required this.label,
+    required this.value,
+    this.isStrong = false,
+  });
+
+  final String label;
+  final String value;
+  final bool isStrong;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(
+            label,
+            style: const TextStyle(color: AppColors.grayMuted),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: isStrong ? AppColors.navy : AppColors.grayText,
+              fontWeight: isStrong ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
+        ),
       ],
     );
   }
