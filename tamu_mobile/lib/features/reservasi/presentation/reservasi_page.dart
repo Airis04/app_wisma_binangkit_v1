@@ -218,10 +218,12 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       );
 
       if (!mounted) return;
+      ref.invalidate(myReservationsProvider);
       setState(() {
         _successMessage =
             'Reservasi ${reservasi.idReservasi} dikirim dan menunggu konfirmasi pemilik.';
       });
+      await _showPaymentSuccessDialog(reservasi.idReservasi);
     } catch (err) {
       if (!mounted) return;
       setState(() {
@@ -242,6 +244,42 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       return (err.error as ApiException).message;
     }
     return 'Gagal membuat reservasi. Silakan coba lagi.';
+  }
+
+  Future<void> _showPaymentSuccessDialog(String idReservasi) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.card,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: AppColors.hijau),
+              SizedBox(width: 10),
+              Expanded(child: Text('Bukti Pembayaran Terkirim')),
+            ],
+          ),
+          content: Text(
+            'Reservasi $idReservasi sudah masuk ke verifikasi pemilik. Status pesanan bisa dilihat di Riwayat.',
+          ),
+          actions: [
+            OutlinedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Tutup'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                context.go('/riwayat');
+              },
+              child: const Text('Lihat Pesanan'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
