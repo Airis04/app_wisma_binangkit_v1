@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,11 +8,32 @@ import '../../../config/theme.dart';
 import '../../../shared/utils/format.dart';
 import '../../reservasi/data/reservation_repository.dart';
 
-class RiwayatPage extends ConsumerWidget {
+class RiwayatPage extends ConsumerStatefulWidget {
   const RiwayatPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RiwayatPage> createState() => _RiwayatPageState();
+}
+
+class _RiwayatPageState extends ConsumerState<RiwayatPage> {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      ref.invalidate(myReservationsProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final reservations = ref.watch(myReservationsProvider);
 
     return Scaffold(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,14 +8,38 @@ import '../../../config/theme.dart';
 import '../../../shared/utils/format.dart';
 import '../../reservasi/data/reservation_repository.dart';
 
-class DetailRiwayatPage extends ConsumerWidget {
+class DetailRiwayatPage extends ConsumerStatefulWidget {
   const DetailRiwayatPage({required this.idReservasi, super.key});
 
   final String idReservasi;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final reservation = ref.watch(reservationDetailProvider(idReservasi));
+  ConsumerState<DetailRiwayatPage> createState() => _DetailRiwayatPageState();
+}
+
+class _DetailRiwayatPageState extends ConsumerState<DetailRiwayatPage> {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      ref.invalidate(reservationDetailProvider(widget.idReservasi));
+      ref.invalidate(myReservationsProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reservation = ref.watch(
+      reservationDetailProvider(widget.idReservasi),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -22,7 +48,7 @@ class DetailRiwayatPage extends ConsumerWidget {
           IconButton(
             tooltip: 'Muat ulang',
             onPressed: () =>
-                ref.invalidate(reservationDetailProvider(idReservasi)),
+                ref.invalidate(reservationDetailProvider(widget.idReservasi)),
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -30,11 +56,12 @@ class DetailRiwayatPage extends ConsumerWidget {
       body: reservation.when(
         data: (data) => RefreshIndicator(
           onRefresh: () =>
-              ref.refresh(reservationDetailProvider(idReservasi).future),
+              ref.refresh(reservationDetailProvider(widget.idReservasi).future),
           child: _DetailContent(reservation: data),
         ),
         error: (error, _) => _ErrorState(
-          onRetry: () => ref.invalidate(reservationDetailProvider(idReservasi)),
+          onRetry: () =>
+              ref.invalidate(reservationDetailProvider(widget.idReservasi)),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
