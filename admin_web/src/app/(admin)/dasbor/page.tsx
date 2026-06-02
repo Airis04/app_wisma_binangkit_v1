@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 
+import DasborAutoRefresh from "./_components/dasbor-auto-refresh";
 import SummaryCard from "./_components/summary-card";
 import TrenLabaChart from "./_components/tren-laba-chart";
 import TabelVerifikasiPembayaran from "./_components/tabel-verifikasi-pembayaran";
@@ -18,6 +19,8 @@ export default async function DasborPage() {
 
   return (
     <div className="space-y-6">
+      <DasborAutoRefresh />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Dasbor</h1>
         <p className="text-sm text-gray-500 mt-1">

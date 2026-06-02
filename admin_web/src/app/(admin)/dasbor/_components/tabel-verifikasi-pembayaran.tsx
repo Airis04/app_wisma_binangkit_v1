@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,6 +46,7 @@ type Props = {
 };
 
 export default function TabelVerifikasiPembayaran({ data }: Props) {
+  const router = useRouter();
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -70,6 +72,7 @@ export default function TabelVerifikasiPembayaran({ data }: Props) {
       }
 
       setConfirmAction(null);
+      router.refresh();
     });
   }
 
