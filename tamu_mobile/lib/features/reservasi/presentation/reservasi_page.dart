@@ -1,41 +1,453 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../config/theme.dart';
+import '../../../shared/api/api_exception.dart';
+import '../../../shared/utils/format.dart';
+import '../../katalog/data/unit_repository.dart';
+import '../data/reservation_repository.dart';
 
-class ReservasiPage extends StatelessWidget {
+class ReservasiPage extends ConsumerStatefulWidget {
   const ReservasiPage({required this.idUnit, super.key});
 
   final String idUnit;
 
   @override
+  ConsumerState<ReservasiPage> createState() => _ReservasiPageState();
+}
+
+class _ReservasiPageState extends ConsumerState<ReservasiPage> {
+  DateTime? _checkin;
+  DateTime? _checkout;
+  XFile? _buktiBayar;
+  bool _isSubmitting = false;
+  String? _errorMessage;
+  String? _successMessage;
+
+  int _jumlahMalam() {
+    final checkin = _checkin;
+    final checkout = _checkout;
+    if (checkin == null || checkout == null) return 0;
+    return checkout.difference(checkin).inDays;
+  }
+
+  Future<void> _pickDate({required bool isCheckin}) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final initial = isCheckin
+        ? _checkin ?? today
+        : _checkout ?? _checkin?.add(const Duration(days: 1)) ?? today;
+
+    final picked = await showDatePicker(
+      context: context,
+      locale: const Locale('id', 'ID'),
+      initialDate: initial.isBefore(today) ? today : initial,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      if (isCheckin) {
+        _checkin = picked;
+        if (_checkout == null || !_checkout!.isAfter(picked)) {
+          _checkout = picked.add(const Duration(days: 1));
+        }
+      } else {
+        _checkout = picked;
+      }
+      _errorMessage = null;
+      _successMessage = null;
+    });
+  }
+
+  Future<void> _pickBuktiBayar() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (file == null) return;
+
+    setState(() {
+      _buktiBayar = file;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+  }
+
+  Future<void> _submit(UnitHomestay unit) async {
+    final checkin = _checkin;
+    final checkout = _checkout;
+
+    if (checkin == null || checkout == null) {
+      setState(() {
+        _errorMessage = 'Pilih tanggal check-in dan check-out.';
+      });
+      return;
+    }
+
+    if (!checkout.isAfter(checkin)) {
+      setState(() {
+        _errorMessage = 'Tanggal check-out harus setelah check-in.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    try {
+      final repository = ref.read(reservationRepositoryProvider);
+      var reservasi = await repository.createReservation(
+        idUnit: unit.idUnit,
+        checkin: checkin,
+        checkout: checkout,
+      );
+
+      final buktiBayar = _buktiBayar;
+      if (buktiBayar != null) {
+        reservasi = await repository.uploadBuktiBayar(
+          idReservasi: reservasi.idReservasi,
+          filePath: buktiBayar.path,
+        );
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _successMessage = buktiBayar == null
+            ? 'Reservasi ${reservasi.idReservasi} dibuat. Silakan unggah bukti bayar agar masuk verifikasi pemilik.'
+            : 'Reservasi ${reservasi.idReservasi} dikirim dan menunggu konfirmasi pemilik.';
+      });
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = _messageFromError(err);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  String _messageFromError(Object err) {
+    if (err is ApiException) return err.message;
+    if (err is DioException && err.error is ApiException) {
+      return (err.error as ApiException).message;
+    }
+    return 'Gagal membuat reservasi. Silakan coba lagi.';
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final unit = ref.watch(unitDetailProvider(widget.idUnit));
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pesan Unit'),
+      appBar: AppBar(title: const Text('Pesan Unit')),
+      body: unit.when(
+        data: (data) => _ReservasiForm(
+          unit: data,
+          checkin: _checkin,
+          checkout: _checkout,
+          buktiBayar: _buktiBayar,
+          jumlahMalam: _jumlahMalam(),
+          isSubmitting: _isSubmitting,
+          errorMessage: _errorMessage,
+          successMessage: _successMessage,
+          onPickCheckin: () => _pickDate(isCheckin: true),
+          onPickCheckout: () => _pickDate(isCheckin: false),
+          onPickBukti: _pickBuktiBayar,
+          onSubmit: () => _submit(data),
+        ),
+        error: (error, _) => _ErrorState(
+          onRetry: () => ref.invalidate(unitDetailProvider(widget.idUnit)),
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Reservasi untuk $idUnit',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.navy,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Form pilih tanggal, kalkulasi tagihan, dan upload bukti '
-                'transfer akan dibangun di branch feature/mobile-reservasi.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.grayMuted),
-              ),
-            ],
+    );
+  }
+}
+
+class _ReservasiForm extends StatelessWidget {
+  const _ReservasiForm({
+    required this.unit,
+    required this.checkin,
+    required this.checkout,
+    required this.buktiBayar,
+    required this.jumlahMalam,
+    required this.isSubmitting,
+    required this.onPickCheckin,
+    required this.onPickCheckout,
+    required this.onPickBukti,
+    required this.onSubmit,
+    this.errorMessage,
+    this.successMessage,
+  });
+
+  final UnitHomestay unit;
+  final DateTime? checkin;
+  final DateTime? checkout;
+  final XFile? buktiBayar;
+  final int jumlahMalam;
+  final bool isSubmitting;
+  final String? errorMessage;
+  final String? successMessage;
+  final VoidCallback onPickCheckin;
+  final VoidCallback onPickCheckout;
+  final VoidCallback onPickBukti;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalTagihan = unit.hargaPerMalam * jumlahMalam;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: AppColors.grayBorder),
           ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  unit.namaUnit,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.grayText,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${unit.kategori} • Kapasitas ${unit.kapasitas} orang',
+                  style: const TextStyle(color: AppColors.grayMuted),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '${formatRupiah(unit.hargaPerMalam)} / malam',
+                  style: const TextStyle(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _DateButton(
+          label: 'Check-in',
+          value: checkin == null ? 'Pilih tanggal' : formatTanggal(checkin!),
+          onPressed: isSubmitting ? null : onPickCheckin,
+        ),
+        const SizedBox(height: 12),
+        _DateButton(
+          label: 'Check-out',
+          value: checkout == null ? 'Pilih tanggal' : formatTanggal(checkout!),
+          onPressed: isSubmitting ? null : onPickCheckout,
+        ),
+        const SizedBox(height: 16),
+        Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: AppColors.grayBorder),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Ringkasan Tagihan',
+                  style: TextStyle(
+                    color: AppColors.grayText,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _SummaryRow(label: 'Jumlah malam', value: '$jumlahMalam malam'),
+                const SizedBox(height: 6),
+                _SummaryRow(
+                  label: 'Total tagihan',
+                  value: formatRupiah(totalTagihan),
+                  isStrong: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: isSubmitting ? null : onPickBukti,
+          icon: const Icon(Icons.upload_file_outlined),
+          label: Text(
+            buktiBayar == null
+                ? 'Pilih Bukti Bayar'
+                : 'Bukti Dipilih: ${buktiBayar!.name}',
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Bukti bayar boleh diunggah sekarang agar reservasi langsung masuk verifikasi pemilik.',
+          style: TextStyle(color: AppColors.grayMuted),
+        ),
+        if (errorMessage != null) ...[
+          const SizedBox(height: 14),
+          _MessageBox(message: errorMessage!, isError: true),
+        ],
+        if (successMessage != null) ...[
+          const SizedBox(height: 14),
+          _MessageBox(message: successMessage!, isError: false),
+        ],
+        const SizedBox(height: 18),
+        ElevatedButton(
+          onPressed: isSubmitting ? null : onSubmit,
+          child: isSubmitting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.card,
+                  ),
+                )
+              : const Text('Kirim Reservasi'),
+        ),
+      ],
+    );
+  }
+}
+
+class _DateButton extends StatelessWidget {
+  const _DateButton({
+    required this.label,
+    required this.value,
+    required this.onPressed,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      child: Row(
+        children: [
+          const Icon(Icons.calendar_today_outlined),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: AppColors.grayText,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.isStrong = false,
+  });
+
+  final String label;
+  final String value;
+  final bool isStrong;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(color: AppColors.grayMuted),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: isStrong ? AppColors.navy : AppColors.grayText,
+            fontWeight: isStrong ? FontWeight.w800 : FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MessageBox extends StatelessWidget {
+  const _MessageBox({required this.message, required this.isError});
+
+  final String message;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isError ? AppColors.merah : AppColors.hijau;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color),
+        color: color.withValues(alpha: 0.08),
+      ),
+      child: Text(message, style: TextStyle(color: color)),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Gagal memuat data unit.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.grayMuted),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: onRetry, child: const Text('Coba Lagi')),
+          ],
         ),
       ),
     );

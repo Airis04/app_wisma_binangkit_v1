@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/api/api_exception.dart';
@@ -88,6 +89,9 @@ class AuthController extends StateNotifier<AuthState> {
   String _messageFromError(Object err) {
     if (err is ApiException) {
       return err.message;
+    }
+    if (err is DioException && err.error is ApiException) {
+      return (err.error as ApiException).message;
     }
     return 'Terjadi kesalahan. Silakan coba lagi.';
   }
