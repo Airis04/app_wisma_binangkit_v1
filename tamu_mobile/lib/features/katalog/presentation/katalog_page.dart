@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,11 +9,32 @@ import '../../../config/theme.dart';
 import '../../../shared/utils/format.dart';
 import '../data/unit_repository.dart';
 
-class KatalogPage extends ConsumerWidget {
+class KatalogPage extends ConsumerStatefulWidget {
   const KatalogPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<KatalogPage> createState() => _KatalogPageState();
+}
+
+class _KatalogPageState extends ConsumerState<KatalogPage> {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      ref.invalidate(unitListProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final units = ref.watch(unitListProvider);
 
     return Scaffold(

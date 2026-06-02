@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,24 +9,46 @@ import '../../../config/theme.dart';
 import '../../../shared/utils/format.dart';
 import '../data/unit_repository.dart';
 
-class DetailUnitPage extends ConsumerWidget {
+class DetailUnitPage extends ConsumerStatefulWidget {
   const DetailUnitPage({required this.idUnit, super.key});
 
   final String idUnit;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final unit = ref.watch(unitDetailProvider(idUnit));
+  ConsumerState<DetailUnitPage> createState() => _DetailUnitPageState();
+}
+
+class _DetailUnitPageState extends ConsumerState<DetailUnitPage> {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      ref.invalidate(unitDetailProvider(widget.idUnit));
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = ref.watch(unitDetailProvider(widget.idUnit));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Unit')),
       body: unit.when(
         data: (data) => RefreshIndicator(
-          onRefresh: () => ref.refresh(unitDetailProvider(idUnit).future),
+          onRefresh: () =>
+              ref.refresh(unitDetailProvider(widget.idUnit).future),
           child: _DetailContent(unit: data),
         ),
         error: (error, _) => _ErrorState(
-          onRetry: () => ref.invalidate(unitDetailProvider(idUnit)),
+          onRetry: () => ref.invalidate(unitDetailProvider(widget.idUnit)),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
