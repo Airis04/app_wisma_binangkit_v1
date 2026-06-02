@@ -13,6 +13,8 @@ class ReservationMobile {
     required this.totalTagihan,
     required this.statusPesanan,
     this.buktiBayar,
+    this.namaUnit,
+    this.kategoriUnit,
   });
 
   final String idReservasi;
@@ -22,8 +24,12 @@ class ReservationMobile {
   final int totalTagihan;
   final String statusPesanan;
   final String? buktiBayar;
+  final String? namaUnit;
+  final String? kategoriUnit;
 
   factory ReservationMobile.fromJson(Map<String, dynamic> json) {
+    final unitJson = json['unit'];
+
     return ReservationMobile(
       idReservasi: json['id_reservasi'] as String,
       idUnit: json['id_unit'] as String,
@@ -32,6 +38,12 @@ class ReservationMobile {
       totalTagihan: json['total_tagihan'] as int,
       statusPesanan: json['status_pesanan'] as String,
       buktiBayar: json['bukti_bayar'] as String?,
+      namaUnit: unitJson is Map<String, dynamic>
+          ? unitJson['nama_unit'] as String?
+          : null,
+      kategoriUnit: unitJson is Map<String, dynamic>
+          ? unitJson['kategori'] as String?
+          : null,
     );
   }
 }
@@ -75,7 +87,33 @@ class ReservationRepository {
     return ReservationMobile.fromJson(_readData(response.data));
   }
 
+  Future<List<ReservationMobile>> fetchMyReservations() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/mobile/reservations/me',
+    );
+    final data = _readRawData(response.data);
+
+    if (data is! List) {
+      throw ApiException(message: 'Format riwayat reservasi tidak valid.');
+    }
+
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(ReservationMobile.fromJson)
+        .toList();
+  }
+
   Map<String, dynamic> _readData(Map<String, dynamic>? body) {
+    final data = _readRawData(body);
+
+    if (data is! Map<String, dynamic>) {
+      throw ApiException(message: 'Format reservasi tidak valid.');
+    }
+
+    return data;
+  }
+
+  Object? _readRawData(Map<String, dynamic>? body) {
     if (body == null) {
       throw ApiException(message: 'Respons server kosong.');
     }
@@ -88,12 +126,7 @@ class ReservationRepository {
       );
     }
 
-    final data = body['data'];
-    if (data is! Map<String, dynamic>) {
-      throw ApiException(message: 'Format reservasi tidak valid.');
-    }
-
-    return data;
+    return body['data'];
   }
 }
 
@@ -106,4 +139,8 @@ String _dateOnly(DateTime date) {
 
 final reservationRepositoryProvider = Provider<ReservationRepository>((ref) {
   return ReservationRepository(ref.watch(dioClientProvider));
+});
+
+final myReservationsProvider = FutureProvider<List<ReservationMobile>>((ref) {
+  return ref.watch(reservationRepositoryProvider).fetchMyReservations();
 });
