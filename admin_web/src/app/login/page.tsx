@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
@@ -32,16 +32,14 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const error = searchParams.get("error");
+  const error = searchParams.get("error");
+  const [serverError, setServerError] = useState<string | null>(() => {
     if (error === "CredentialsSignin" || error === "Credentials") {
-      setServerError("Email atau kata sandi salah");
-    } else if (error) {
-      setServerError("Terjadi kesalahan saat masuk. Silakan coba lagi.");
+      return "Email atau kata sandi salah";
     }
-  }, [searchParams]);
+    if (error) return "Terjadi kesalahan saat masuk. Silakan coba lagi.";
+    return null;
+  });
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
