@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { jsonError, jsonOk } from "@/lib/mobile/api-response";
-import { DEFAULT_PAYMENT_SETTING } from "@/src/app/(admin)/pengaturan/_lib/schema";
+import { DEFAULT_PAYMENT_SETTING } from "@/src/app/(admin)/pembayaran/_lib/schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export async function GET() {
 
     return jsonOk(data);
   } catch (err) {
-    console.error("Gagal mengambil pengaturan pembayaran:", err);
-    return jsonError("Gagal mengambil pengaturan pembayaran", 500);
+    console.error("Gagal mengambil data pembayaran:", err);
+    return jsonError("Gagal mengambil data pembayaran", 500);
   }
 }

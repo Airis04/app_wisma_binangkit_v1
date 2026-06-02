@@ -7,6 +7,7 @@ import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/katalog/presentation/detail_unit_page.dart';
 import '../features/katalog/presentation/katalog_page.dart';
+import '../features/pengaturan/presentation/pengaturan_page.dart';
 import '../features/reservasi/presentation/reservasi_page.dart';
 import '../features/riwayat/presentation/detail_riwayat_page.dart';
 import '../features/riwayat/presentation/riwayat_page.dart';
@@ -54,6 +55,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               idReservasi: state.pathParameters['idReservasi'] ?? '',
             ),
           ),
+          GoRoute(
+            path: '/pengaturan',
+            builder: (context, state) => const PengaturanPage(),
+          ),
         ],
       ),
       GoRoute(
@@ -86,7 +91,7 @@ class _AuthRefreshListenable extends ChangeNotifier {
   }
 }
 
-class _MainShell extends ConsumerWidget {
+class _MainShell extends StatelessWidget {
   const _MainShell({required this.child});
 
   final Widget child;
@@ -94,10 +99,11 @@ class _MainShell extends ConsumerWidget {
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/riwayat')) return 1;
+    if (location.startsWith('/pengaturan')) return 2;
     return 0;
   }
 
-  void _onTap(BuildContext context, int index, WidgetRef ref) {
+  void _onTap(BuildContext context, int index) {
     switch (index) {
       case 0:
         context.go('/');
@@ -106,20 +112,19 @@ class _MainShell extends ConsumerWidget {
         context.go('/riwayat');
         break;
       case 2:
-        ref.read(authControllerProvider.notifier).logout();
-        context.go('/login');
+        context.go('/pengaturan');
         break;
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final index = _currentIndex(context);
     return Scaffold(
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        onDestinationSelected: (i) => _onTap(context, i, ref),
+        onDestinationSelected: (i) => _onTap(context, i),
         backgroundColor: AppColors.card,
         indicatorColor: AppColors.navy.withValues(alpha: 0.12),
         destinations: const [
@@ -134,9 +139,9 @@ class _MainShell extends ConsumerWidget {
             label: 'Riwayat',
           ),
           NavigationDestination(
-            icon: Icon(Icons.logout_outlined),
-            selectedIcon: Icon(Icons.logout, color: AppColors.navy),
-            label: 'Keluar',
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings, color: AppColors.navy),
+            label: 'Pengaturan',
           ),
         ],
       ),

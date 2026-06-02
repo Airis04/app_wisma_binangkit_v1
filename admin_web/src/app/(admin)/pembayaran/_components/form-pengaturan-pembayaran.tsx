@@ -63,7 +63,7 @@ export default function FormPengaturanPembayaran({
     <Card className="border-gray-200">
       <CardHeader>
         <CardTitle className="text-base font-semibold text-gray-900">
-          Pengaturan Pembayaran Manual
+          Rekening Pembayaran Manual
         </CardTitle>
         <p className="text-sm text-gray-500">
           Data ini ditampilkan di aplikasi tamu saat tamu lanjut ke step
@@ -147,7 +147,7 @@ export default function FormPengaturanPembayaran({
                 className="bg-[#1E3A8A] hover:bg-[#162d6e] text-white"
               >
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Simpan Pengaturan
+                Simpan Pembayaran
               </Button>
             </div>
           </form>

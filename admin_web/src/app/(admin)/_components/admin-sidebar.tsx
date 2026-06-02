@@ -7,7 +7,7 @@ import {
   CalendarDays,
   BedDouble,
   Wallet,
-  Settings,
+  CreditCard,
   Building2,
 } from "lucide-react";
 
@@ -18,7 +18,7 @@ const menuItems = [
   { href: "/pemesanan", label: "Pemesanan", icon: CalendarDays },
   { href: "/unit", label: "Unit", icon: BedDouble },
   { href: "/keuangan", label: "Keuangan", icon: Wallet },
-  { href: "/pengaturan", label: "Pengaturan", icon: Settings },
+  { href: "/pembayaran", label: "Pembayaran", icon: CreditCard },
 ];
 
 export default function AdminSidebar() {

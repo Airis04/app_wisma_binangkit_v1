@@ -42,7 +42,7 @@ export async function updatePaymentSetting(
     if (err instanceof Error) {
       return { ok: false, message: err.message };
     }
-    return { ok: false, message: "Data pengaturan pembayaran tidak valid" };
+    return { ok: false, message: "Data pembayaran tidak valid" };
   }
 
   await prisma.paymentSetting.upsert({
@@ -56,10 +56,10 @@ export async function updatePaymentSetting(
     },
   });
 
-  revalidatePath("/pengaturan");
+  revalidatePath("/pembayaran");
 
   return {
     ok: true,
-    message: "Pengaturan pembayaran berhasil disimpan",
+    message: "Pembayaran manual berhasil disimpan",
   };
 }
