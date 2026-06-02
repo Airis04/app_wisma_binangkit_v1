@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/env.dart';
 import '../../../shared/api/api_exception.dart';
 import '../../../shared/api/dio_client.dart';
 
@@ -12,9 +13,12 @@ class ReservationMobile {
     required this.tglCheckout,
     required this.totalTagihan,
     required this.statusPesanan,
+    required this.createdAt,
     this.buktiBayar,
     this.namaUnit,
     this.kategoriUnit,
+    this.hargaPerMalam,
+    this.kapasitasUnit,
   });
 
   final String idReservasi;
@@ -23,9 +27,12 @@ class ReservationMobile {
   final DateTime tglCheckout;
   final int totalTagihan;
   final String statusPesanan;
+  final DateTime createdAt;
   final String? buktiBayar;
   final String? namaUnit;
   final String? kategoriUnit;
+  final int? hargaPerMalam;
+  final int? kapasitasUnit;
 
   factory ReservationMobile.fromJson(Map<String, dynamic> json) {
     final unitJson = json['unit'];
@@ -37,6 +44,7 @@ class ReservationMobile {
       tglCheckout: DateTime.parse(json['tgl_checkout'] as String),
       totalTagihan: json['total_tagihan'] as int,
       statusPesanan: json['status_pesanan'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
       buktiBayar: json['bukti_bayar'] as String?,
       namaUnit: unitJson is Map<String, dynamic>
           ? unitJson['nama_unit'] as String?
@@ -44,7 +52,25 @@ class ReservationMobile {
       kategoriUnit: unitJson is Map<String, dynamic>
           ? unitJson['kategori'] as String?
           : null,
+      hargaPerMalam: unitJson is Map<String, dynamic>
+          ? unitJson['harga_per_malam'] as int?
+          : null,
+      kapasitasUnit: unitJson is Map<String, dynamic>
+          ? unitJson['kapasitas'] as int?
+          : null,
     );
+  }
+
+  int get jumlahMalam => tglCheckout.difference(tglCheckin).inDays;
+
+  String? get buktiBayarUrl {
+    final path = buktiBayar;
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+    final origin = AppEnv.apiBaseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+    if (path.startsWith('/')) return '$origin$path';
+    return '$origin/$path';
   }
 }
 
@@ -207,6 +233,14 @@ class ReservationRepository {
         .toList();
   }
 
+  Future<ReservationMobile> fetchReservation(String idReservasi) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/mobile/reservations/$idReservasi',
+    );
+
+    return ReservationMobile.fromJson(_readData(response.data));
+  }
+
   Map<String, dynamic> _readData(Map<String, dynamic>? body) {
     final data = _readRawData(body);
 
@@ -248,6 +282,13 @@ final reservationRepositoryProvider = Provider<ReservationRepository>((ref) {
 final myReservationsProvider = FutureProvider<List<ReservationMobile>>((ref) {
   return ref.watch(reservationRepositoryProvider).fetchMyReservations();
 });
+
+final reservationDetailProvider =
+    FutureProvider.family<ReservationMobile, String>((ref, idReservasi) {
+      return ref
+          .watch(reservationRepositoryProvider)
+          .fetchReservation(idReservasi);
+    });
 
 final paymentSettingProvider = FutureProvider<PaymentSettingManual>((ref) {
   return ref.watch(reservationRepositoryProvider).fetchPaymentSetting();

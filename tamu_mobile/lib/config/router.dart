@@ -8,6 +8,7 @@ import '../features/auth/presentation/login_page.dart';
 import '../features/katalog/presentation/detail_unit_page.dart';
 import '../features/katalog/presentation/katalog_page.dart';
 import '../features/reservasi/presentation/reservasi_page.dart';
+import '../features/riwayat/presentation/detail_riwayat_page.dart';
 import '../features/riwayat/presentation/riwayat_page.dart';
 import 'theme.dart';
 
@@ -46,6 +47,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/riwayat',
             builder: (context, state) => const RiwayatPage(),
+          ),
+          GoRoute(
+            path: '/riwayat/:idReservasi',
+            builder: (context, state) => DetailRiwayatPage(
+              idReservasi: state.pathParameters['idReservasi'] ?? '',
+            ),
           ),
         ],
       ),

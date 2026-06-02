@@ -35,7 +35,16 @@ class RiwayatPage extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
               itemBuilder: (context, index) {
-                return _ReservationCard(reservation: data[index]);
+                final reservation = data[index];
+                return _ReservationCard(
+                  reservation: reservation,
+                  onOpen: () {
+                    ref.invalidate(
+                      reservationDetailProvider(reservation.idReservasi),
+                    );
+                    context.push('/riwayat/${reservation.idReservasi}');
+                  },
+                );
               },
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemCount: data.length,
@@ -53,9 +62,10 @@ class RiwayatPage extends ConsumerWidget {
 }
 
 class _ReservationCard extends StatelessWidget {
-  const _ReservationCard({required this.reservation});
+  const _ReservationCard({required this.reservation, required this.onOpen});
 
   final ReservationMobile reservation;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -64,52 +74,61 @@ class _ReservationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         side: const BorderSide(color: AppColors.grayBorder),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    reservation.namaUnit ?? reservation.idUnit,
-                    style: const TextStyle(
-                      color: AppColors.grayText,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
+      child: InkWell(
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      reservation.namaUnit ?? reservation.idUnit,
+                      style: const TextStyle(
+                        color: AppColors.grayText,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
+                  _StatusBadge(status: reservation.statusPesanan),
+                ],
+              ),
+              if (reservation.kategoriUnit != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  reservation.kategoriUnit!,
+                  style: const TextStyle(color: AppColors.grayMuted),
                 ),
-                _StatusBadge(status: reservation.statusPesanan),
               ],
-            ),
-            if (reservation.kategoriUnit != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                reservation.kategoriUnit!,
-                style: const TextStyle(color: AppColors.grayMuted),
+              const SizedBox(height: 12),
+              _InfoRow(
+                icon: Icons.confirmation_number_outlined,
+                text: reservation.idReservasi,
+              ),
+              const SizedBox(height: 8),
+              _InfoRow(
+                icon: Icons.calendar_today_outlined,
+                text:
+                    '${formatTanggalPendek(reservation.tglCheckin)} - ${formatTanggalPendek(reservation.tglCheckout)}',
+              ),
+              const SizedBox(height: 8),
+              _InfoRow(
+                icon: Icons.payments_outlined,
+                text: formatRupiah(reservation.totalTagihan),
+                strong: true,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Ketuk untuk melihat detail',
+                style: TextStyle(color: AppColors.grayMuted, fontSize: 12),
               ),
             ],
-            const SizedBox(height: 12),
-            _InfoRow(
-              icon: Icons.confirmation_number_outlined,
-              text: reservation.idReservasi,
-            ),
-            const SizedBox(height: 8),
-            _InfoRow(
-              icon: Icons.calendar_today_outlined,
-              text:
-                  '${formatTanggalPendek(reservation.tglCheckin)} - ${formatTanggalPendek(reservation.tglCheckout)}',
-            ),
-            const SizedBox(height: 8),
-            _InfoRow(
-              icon: Icons.payments_outlined,
-              text: formatRupiah(reservation.totalTagihan),
-              strong: true,
-            ),
-          ],
+          ),
         ),
       ),
     );
