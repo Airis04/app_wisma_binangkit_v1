@@ -96,14 +96,13 @@ class AuthController extends StateNotifier<AuthState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final result = await _repository.register(
+      await _repository.register(
         namaLengkap: namaLengkap.trim(),
         email: email.trim().toLowerCase(),
         password: password,
         noTelepon: noTelepon.trim(),
       );
-      await _repository.saveSession(result);
-      state = AuthState(status: AuthStatus.authenticated, user: result.user);
+      state = const AuthState(status: AuthStatus.unauthenticated);
       return true;
     } catch (err) {
       state = state.copyWith(

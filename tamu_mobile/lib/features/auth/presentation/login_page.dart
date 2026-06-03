@@ -21,6 +21,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   bool _isRegisterMode = false;
   bool _showPassword = false;
+  String? _successMessage;
 
   @override
   void dispose() {
@@ -34,8 +35,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() {
+      _successMessage = null;
+    });
+
     final controller = ref.read(authControllerProvider.notifier);
-    final ok = _isRegisterMode
+    final isRegister = _isRegisterMode;
+    final ok = isRegister
         ? await controller.register(
             namaLengkap: _namaController.text,
             email: _emailController.text,
@@ -48,6 +54,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           );
 
     if (!mounted || !ok) return;
+
+    if (isRegister) {
+      setState(() {
+        _isRegisterMode = false;
+        _successMessage =
+            'Akun berhasil dibuat. Silakan masuk dengan email dan kata sandi Anda.';
+        _namaController.clear();
+        _passwordController.clear();
+        _teleponController.clear();
+      });
+      return;
+    }
+
     context.go('/');
   }
 
@@ -137,6 +156,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           : (value) {
                               setState(() {
                                 _isRegisterMode = value.first;
+                                _successMessage = null;
                               });
                             },
                     ),
@@ -265,6 +285,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   authState.errorMessage!,
                                   style: const TextStyle(
                                     color: AppColors.merah,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            if (_successMessage != null) ...[
+                              const SizedBox(height: 14),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.hijau.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppColors.hijau),
+                                ),
+                                child: Text(
+                                  _successMessage!,
+                                  style: const TextStyle(
+                                    color: AppColors.hijau,
                                   ),
                                 ),
                               ),
