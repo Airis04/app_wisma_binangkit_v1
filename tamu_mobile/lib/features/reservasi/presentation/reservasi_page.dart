@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +22,7 @@ class ReservasiPage extends ConsumerStatefulWidget {
 }
 
 class _ReservasiPageState extends ConsumerState<ReservasiPage> {
+  Timer? _paymentRefreshTimer;
   DateTime? _checkin;
   DateTime? _checkout;
   AvailabilityResult? _availability;
@@ -29,6 +32,20 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
   bool _isSubmitting = false;
   String? _errorMessage;
   String? _successMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      ref.invalidate(paymentSettingProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _paymentRefreshTimer?.cancel();
+    super.dispose();
+  }
 
   int _jumlahMalam() {
     final checkin = _checkin;
@@ -159,6 +176,8 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       });
       return;
     }
+
+    ref.invalidate(paymentSettingProvider);
 
     setState(() {
       _isPaymentStep = true;
