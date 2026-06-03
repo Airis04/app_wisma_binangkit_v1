@@ -29,6 +29,9 @@ Thumbs.db
 *.docx
 *.pdf
 
+# Dokumentasi lokal/internal proyek (jangan publish ke GitHub)
+DOKUMENTASI_*.md
+
 # File upload lokal/testing (tidak ikut tracked)
 admin_web/public/uploads/units/*
 !admin_web/public/uploads/units/.gitkeep
