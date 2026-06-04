@@ -164,6 +164,14 @@ class AuthRepository {
     return token != null && token.isNotEmpty;
   }
 
+  Future<bool> hasSeenOnboarding() {
+    return _tokenStorage.hasSeenOnboarding();
+  }
+
+  Future<void> markOnboardingSeen() {
+    return _tokenStorage.markOnboardingSeen();
+  }
+
   Future<void> logout() => _tokenStorage.clear();
 
   AuthResult _handleAuthResponse(Map<String, dynamic>? body) {

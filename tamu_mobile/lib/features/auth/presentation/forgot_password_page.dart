@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../config/theme.dart';
 import '../../../shared/api/api_exception.dart';
+import '../../../shared/widgets/wisma_brand_mark.dart';
 import '../data/auth_repository.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
@@ -112,40 +113,59 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Lupa Password')),
+      appBar: AppBar(title: const Text('Lupa Kata Sandi')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.lock_reset_outlined,
-                  size: 64,
-                  color: AppColors.navy,
-                ),
+                const WismaBrandMark(compact: true),
                 const SizedBox(height: 16),
-                const Text(
-                  'Atur Ulang Kata Sandi',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.navy,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.grayBorder),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.lock_reset_outlined, color: AppColors.navy),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Atur Ulang Kata Sandi',
+                              style: TextStyle(
+                                color: AppColors.grayText,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Masukkan email dan nomor telepon yang terdaftar. Setelah berhasil, silakan masuk kembali.',
+                              style: TextStyle(
+                                color: AppColors.grayMuted,
+                                height: 1.45,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Masukkan email dan nomor telepon yang terdaftar untuk mengganti kata sandi.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.grayMuted),
-                ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 16),
                 Card(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                     side: const BorderSide(color: AppColors.grayBorder),
                   ),
                   child: Padding(
@@ -220,41 +240,37 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           validator: _confirmPasswordValidator,
                           onFieldSubmitted: (_) => _submit(),
                         ),
-                        if (_errorMessage != null) ...[
-                          const SizedBox(height: 14),
-                          _MessageBox(message: _errorMessage!, isError: true),
-                        ],
-                        if (_successMessage != null) ...[
-                          const SizedBox(height: 14),
-                          _MessageBox(
-                            message: _successMessage!,
-                            isError: false,
-                          ),
-                        ],
-                        const SizedBox(height: 18),
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _submit,
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.card,
-                                  ),
-                                )
-                              : const Text('Simpan Kata Sandi Baru'),
-                        ),
-                        const SizedBox(height: 10),
-                        OutlinedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () => context.go('/login'),
-                          child: const Text('Kembali ke Login'),
-                        ),
                       ],
                     ),
                   ),
+                ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 14),
+                  _MessageBox(message: _errorMessage!, isError: true),
+                ],
+                if (_successMessage != null) ...[
+                  const SizedBox(height: 14),
+                  _MessageBox(message: _successMessage!, isError: false),
+                ],
+                const SizedBox(height: 18),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.card,
+                          ),
+                        )
+                      : const Text('Simpan Kata Sandi Baru'),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _isLoading ? null : () => context.go('/login'),
+                  icon: const Icon(Icons.arrow_back_outlined),
+                  label: const Text('Kembali ke Login'),
                 ),
               ],
             ),
@@ -276,13 +292,26 @@ class _MessageBox extends StatelessWidget {
     final color = isError ? AppColors.merah : AppColors.hijau;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
-      child: Text(message, style: TextStyle(color: color)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isError ? Icons.error_outline : Icons.check_circle_outline,
+            color: color,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(message, style: TextStyle(color: color)),
+          ),
+        ],
+      ),
     );
   }
 }

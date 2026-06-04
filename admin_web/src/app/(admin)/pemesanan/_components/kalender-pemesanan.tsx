@@ -4,9 +4,22 @@ import { useMemo, useState } from "react";
 import { Calendar, dateFnsLocalizer, type View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Home,
+  Phone,
+} from "lucide-react";
 
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -139,44 +152,66 @@ export default function KalenderPemesanan({ events, selectedUnitIds }: Props) {
   }
 
   return (
-    <Card className="border-gray-200 p-4">
-      <CustomToolbar
-        date={currentDate}
-        onChange={(d) => setCurrentDate(d)}
-        onNavigate={(action) => {
-          const next = new Date(currentDate);
-          if (action === "PREV") {
-            next.setMonth(next.getMonth() - 1);
-          } else if (action === "NEXT") {
-            next.setMonth(next.getMonth() + 1);
-          } else {
-            next.setTime(new Date().getTime());
-          }
-          setCurrentDate(next);
-        }}
-      />
+    <Card className="border-gray-200 bg-white shadow-sm">
+      <CardHeader className="border-b border-gray-100 pb-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-gray-900">
+              <CalendarDays size={18} className="text-[#1E3A8A]" />
+              Kalender Bulanan
+            </CardTitle>
+            <CardDescription>
+              Klik pita merah untuk melihat detail tamu dan periode menginap.
+            </CardDescription>
+          </div>
+          <Badge
+            variant="outline"
+            className="w-fit border-[#EF4444]/20 bg-[#EF4444]/10 text-[#EF4444]"
+          >
+            {calendarEvents.length} reservasi tampil
+          </Badge>
+        </div>
+      </CardHeader>
 
-      <div className="wb-calendar-wrap">
-        <Calendar
-          localizer={localizer}
-          events={calendarEvents}
-          startAccessor="start"
-          endAccessor="end"
-          views={["month"]}
-          view="month"
-          onView={() => {}}
+      <CardContent className="pt-1">
+        <CustomToolbar
           date={currentDate}
-          onNavigate={(d) => setCurrentDate(d)}
-          toolbar={false}
-          messages={messages}
-          culture="id"
-          eventPropGetter={eventPropGetter}
-          dayPropGetter={dayPropGetter}
-          onSelectEvent={handleSelectEvent}
-          popup={false}
-          style={{ height: 620 }}
+          onChange={(d) => setCurrentDate(d)}
+          onNavigate={(action) => {
+            const next = new Date(currentDate);
+            if (action === "PREV") {
+              next.setMonth(next.getMonth() - 1);
+            } else if (action === "NEXT") {
+              next.setMonth(next.getMonth() + 1);
+            } else {
+              next.setTime(new Date().getTime());
+            }
+            setCurrentDate(next);
+          }}
         />
-      </div>
+
+        <div className="wb-calendar-wrap">
+          <Calendar
+            localizer={localizer}
+            events={calendarEvents}
+            startAccessor="start"
+            endAccessor="end"
+            views={["month"]}
+            view="month"
+            onView={() => {}}
+            date={currentDate}
+            onNavigate={(d) => setCurrentDate(d)}
+            toolbar={false}
+            messages={messages}
+            culture="id"
+            eventPropGetter={eventPropGetter}
+            dayPropGetter={dayPropGetter}
+            onSelectEvent={handleSelectEvent}
+            popup={false}
+            style={{ height: 620 }}
+          />
+        </div>
+      </CardContent>
 
       <Popover
         open={activeEvent !== null}
@@ -201,55 +236,72 @@ export default function KalenderPemesanan({ events, selectedUnitIds }: Props) {
           />
         </PopoverTrigger>
         {activeEvent && (
-          <PopoverContent className="w-80" align="start">
+          <PopoverContent
+            className="w-[344px] border-gray-200 p-0"
+            align="start"
+          >
             <div className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs font-mono text-gray-500">
-                    {activeEvent.id_reservasi}
-                  </p>
-                  <p className="text-base font-semibold text-gray-900">
-                    {activeEvent.nama_tamu}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {activeEvent.no_telepon}
-                  </p>
+              <div className="rounded-t-lg bg-[#1E3A8A] p-4 text-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs text-white/70">
+                      {activeEvent.id_reservasi}
+                    </p>
+                    <p className="mt-1 text-base font-semibold">
+                      {activeEvent.nama_tamu}
+                    </p>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="shrink-0 border-white/30 bg-white/10 text-white"
+                  >
+                    {activeEvent.status_pesanan}
+                  </Badge>
                 </div>
-                <Badge
-                  variant="outline"
-                  className="bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20 shrink-0"
-                >
-                  {activeEvent.status_pesanan}
-                </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-gray-100">
-                <div>
-                  <p className="text-xs text-gray-500">Unit</p>
-                  <p className="font-medium text-gray-900">
+              <div className="grid grid-cols-2 gap-3 p-4 pt-1 text-sm">
+                <div className="rounded-lg border border-gray-200 bg-[#F9FAFB] p-3">
+                  <p className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <Home size={13} />
+                    Unit
+                  </p>
+                  <p className="mt-1 font-medium text-gray-900">
                     {activeEvent.nama_unit}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-500">Total</p>
-                  <p className="font-medium text-[#1E3A8A]">
+                <div className="rounded-lg border border-gray-200 bg-[#F9FAFB] p-3">
+                  <p className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <CreditCard size={13} />
+                    Total
+                  </p>
+                  <p className="mt-1 font-medium text-[#1E3A8A]">
                     {formatRupiah(activeEvent.total_tagihan)}
                   </p>
                 </div>
-                <div>
+                <div className="rounded-lg border border-gray-200 bg-[#F9FAFB] p-3">
                   <p className="text-xs text-gray-500">Check-in</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="mt-1 font-medium text-gray-900">
                     {format(activeEvent.tgl_checkin, "d MMM yyyy", {
                       locale: idLocale,
                     })}
                   </p>
                 </div>
-                <div>
+                <div className="rounded-lg border border-gray-200 bg-[#F9FAFB] p-3">
                   <p className="text-xs text-gray-500">Check-out</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="mt-1 font-medium text-gray-900">
                     {format(activeEvent.tgl_checkout, "d MMM yyyy", {
                       locale: idLocale,
                     })}
+                  </p>
+                </div>
+                <div className="col-span-2 rounded-lg border border-gray-200 bg-white p-3">
+                  <p className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <Phone size={13} />
+                    Nomor Telepon
+                  </p>
+                  <p className="mt-1 font-medium text-gray-900">
+                    {activeEvent.no_telepon || "-"}
                   </p>
                 </div>
               </div>
@@ -292,14 +344,15 @@ function CustomToolbar({
   ];
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 mb-4 px-1">
-      <div className="flex items-center gap-1">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-[#F9FAFB] p-3">
+      <div className="flex items-center gap-2">
         <Button
           type="button"
           variant="outline"
           size="icon"
           onClick={() => onNavigate("PREV")}
           aria-label="Bulan sebelumnya"
+          className="bg-white"
         >
           <ChevronLeft size={16} />
         </Button>
@@ -308,6 +361,7 @@ function CustomToolbar({
           variant="outline"
           size="sm"
           onClick={() => onNavigate("TODAY")}
+          className="bg-white font-medium text-[#1E3A8A]"
         >
           Hari Ini
         </Button>
@@ -317,6 +371,7 @@ function CustomToolbar({
           size="icon"
           onClick={() => onNavigate("NEXT")}
           aria-label="Bulan berikutnya"
+          className="bg-white"
         >
           <ChevronRight size={16} />
         </Button>
@@ -332,7 +387,7 @@ function CustomToolbar({
             onChange(next);
           }}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[150px] bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -353,7 +408,7 @@ function CustomToolbar({
             onChange(next);
           }}
         >
-          <SelectTrigger className="w-[100px]">
+          <SelectTrigger className="w-[108px] bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

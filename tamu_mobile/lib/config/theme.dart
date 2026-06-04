@@ -19,6 +19,21 @@ class AppColors {
   static const grayText = Color(0xFF111827);
 }
 
+class AppRadius {
+  AppRadius._();
+
+  static const sm = 8.0;
+  static const md = 12.0;
+  static const lg = 16.0;
+}
+
+class AppSpacing {
+  AppSpacing._();
+
+  static const page = 16.0;
+  static const section = 18.0;
+}
+
 ThemeData buildAppTheme() {
   const primary = AppColors.navy;
 
@@ -36,11 +51,16 @@ ThemeData buildAppTheme() {
     useMaterial3: true,
     fontFamily: 'Roboto',
     appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.card,
+      backgroundColor: AppColors.background,
       foregroundColor: AppColors.grayText,
       elevation: 0,
       centerTitle: false,
-      surfaceTintColor: AppColors.card,
+      surfaceTintColor: AppColors.background,
+      titleTextStyle: TextStyle(
+        color: AppColors.grayText,
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -48,7 +68,7 @@ ThemeData buildAppTheme() {
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       ),
@@ -59,7 +79,7 @@ ThemeData buildAppTheme() {
         side: const BorderSide(color: AppColors.navy),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
       ),
     ),
@@ -68,23 +88,24 @@ ThemeData buildAppTheme() {
       fillColor: AppColors.card,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         borderSide: const BorderSide(color: AppColors.grayBorder),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         borderSide: const BorderSide(color: AppColors.grayBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
       ),
     ),
     cardTheme: const CardThemeData(
       color: AppColors.card,
-      elevation: 0,
+      elevation: 1,
       surfaceTintColor: AppColors.card,
       margin: EdgeInsets.zero,
+      shadowColor: Color(0x14000000),
     ),
   );
 }

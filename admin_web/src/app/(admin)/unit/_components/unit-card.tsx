@@ -2,7 +2,15 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Users, Pencil, Trash2, ImageOff, Loader2 } from "lucide-react";
+import {
+  Users,
+  Pencil,
+  Trash2,
+  ImageOff,
+  Loader2,
+  Home,
+  Tag,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Card } from "@/components/ui/card";
@@ -62,9 +70,9 @@ export default function UnitCard({ unit }: Props) {
     .filter(Boolean);
 
   return (
-    <Card className="border-gray-200 overflow-hidden">
-      <div className="flex flex-col sm:flex-row gap-4 p-4">
-        <div className="w-full sm:w-48 h-32 shrink-0 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+    <Card className="overflow-hidden border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-stretch">
+        <div className="relative flex h-48 w-full shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F9FAFB] lg:h-auto lg:w-56">
           {unit.foto_unit ? (
             <img
               src={unit.foto_unit}
@@ -72,64 +80,75 @@ export default function UnitCard({ unit }: Props) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <ImageOff size={32} className="text-gray-400" />
+            <ImageOff size={34} className="text-gray-400" />
           )}
-        </div>
-
-        <div className="flex-1 min-w-0 flex flex-col">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-xs font-mono text-gray-500">{unit.id_unit}</p>
-              <h3 className="text-lg font-semibold text-gray-900 truncate">
-                {unit.nama_unit}
-              </h3>
-              <p className="text-sm text-gray-600">{unit.kategori}</p>
-            </div>
+          <div className="absolute left-3 top-3">
             <Badge
               variant="outline"
-              className={cn("shrink-0", statusStyle[unit.status_unit])}
+              className={cn(
+                "border-white/70 bg-white/90 shadow-sm backdrop-blur",
+                statusStyle[unit.status_unit]
+              )}
             >
               {unit.status_unit}
             </Badge>
           </div>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm">
-            <div className="flex items-center gap-1.5 text-gray-700">
-              <Users size={16} className="text-gray-400" />
-              <span>{unit.kapasitas} orang</span>
+        <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#1E3A8A]/10 bg-[#1E3A8A]/5 px-3 py-1 text-xs font-medium text-[#1E3A8A]">
+                <Home size={13} />
+                {unit.id_unit}
+              </div>
+              <h3 className="truncate text-xl font-semibold text-gray-900">
+                {unit.nama_unit}
+              </h3>
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-600">
+                <Tag size={14} className="text-gray-400" />
+                {unit.kategori}
+              </p>
             </div>
-            <div className="font-semibold text-[#1E3A8A]">
-              {formatRupiah(unit.harga_per_malam)}{" "}
-              <span className="text-xs font-normal text-gray-500">
-                / malam
-              </span>
+            <div className="rounded-lg border border-gray-200 bg-[#F9FAFB] px-4 py-3 text-left md:text-right">
+              <p className="text-xs text-gray-500">Harga per malam</p>
+              <p className="text-lg font-bold text-[#1E3A8A]">
+                {formatRupiah(unit.harga_per_malam)}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-700">
+              <Users size={16} className="text-[#1E3A8A]" />
+              <span>{unit.kapasitas} orang</span>
             </div>
           </div>
 
           {fasilitasList.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
+            <div className="flex flex-wrap gap-2">
               {fasilitasList.slice(0, 5).map((f) => (
                 <span
                   key={f}
-                  className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700"
+                  className="rounded-full border border-gray-200 bg-[#F9FAFB] px-2.5 py-1 text-xs text-gray-700"
                 >
                   {f}
                 </span>
               ))}
               {fasilitasList.length > 5 && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                <span className="rounded-full border border-gray-200 bg-[#F9FAFB] px-2.5 py-1 text-xs text-gray-500">
                   +{fasilitasList.length - 5}
                 </span>
               )}
             </div>
           )}
 
-          <div className="flex justify-end gap-2 mt-3">
+          <div className="flex justify-end gap-2 border-t border-gray-100 pt-4">
             <Button
               asChild
               variant="outline"
               size="sm"
-              className="border-gray-300"
+              className="border-gray-300 text-gray-700 hover:text-[#1E3A8A]"
             >
               <Link href={`/unit/${unit.id_unit}/edit`}>
                 <Pencil size={14} className="mr-1" />

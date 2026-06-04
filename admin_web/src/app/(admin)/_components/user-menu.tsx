@@ -25,17 +25,19 @@ export default function UserMenu({ namaLengkap, email, fotoProfil }: Props) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="text-gray-500 hover:text-[#1E3A8A] transition-colors"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:text-[#1E3A8A]"
           aria-label="Menu pengguna"
         >
           {fotoProfil ? (
-            <Image
-              src={fotoProfil}
-              alt={namaLengkap}
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full object-cover"
-            />
+            <span className="relative block h-8 w-8 overflow-hidden rounded-full bg-white">
+              <Image
+                src={fotoProfil}
+                alt={namaLengkap}
+                fill
+                sizes="32px"
+                className="object-contain p-1"
+              />
+            </span>
           ) : (
             <UserCircle size={28} />
           )}

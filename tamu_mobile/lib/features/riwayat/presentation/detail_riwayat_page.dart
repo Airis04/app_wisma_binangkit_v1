@@ -77,7 +77,7 @@ class _DetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
       children: [
         _StatusCard(reservation: reservation),
         const SizedBox(height: 14),
@@ -100,8 +100,8 @@ class _StatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: AppColors.grayBorder),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(color: _statusColor(reservation.statusPesanan)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -111,30 +111,69 @@ class _StatusCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: _statusColor(
+                      reservation.statusPesanan,
+                    ).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    _statusIcon(reservation.statusPesanan),
+                    color: _statusColor(reservation.statusPesanan),
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    reservation.idReservasi,
-                    style: const TextStyle(
-                      color: AppColors.grayText,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        reservation.statusPesanan,
+                        style: TextStyle(
+                          color: _statusColor(reservation.statusPesanan),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        reservation.idReservasi,
+                        style: const TextStyle(
+                          color: AppColors.grayMuted,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 _StatusBadge(status: reservation.statusPesanan),
               ],
             ),
-            const SizedBox(height: 12),
-            _InfoRow(
-              label: 'Status',
-              value: reservation.statusPesanan,
-              icon: Icons.info_outline,
-            ),
-            const SizedBox(height: 8),
-            _InfoRow(
-              label: 'Dibuat',
-              value: formatTanggalPendek(reservation.createdAt),
-              icon: Icons.schedule_outlined,
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Column(
+                children: [
+                  _InfoRow(
+                    label: 'Status',
+                    value: reservation.statusPesanan,
+                    icon: Icons.info_outline,
+                  ),
+                  const SizedBox(height: 8),
+                  _InfoRow(
+                    label: 'Dibuat',
+                    value: formatTanggalPendek(reservation.createdAt),
+                    icon: Icons.schedule_outlined,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             _StatusMessage(status: reservation.statusPesanan),
@@ -156,7 +195,7 @@ class _UnitCard extends StatelessWidget {
 
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         side: const BorderSide(color: AppColors.grayBorder),
       ),
       child: Padding(
@@ -218,7 +257,7 @@ class _PaymentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         side: const BorderSide(color: AppColors.grayBorder),
       ),
       child: Padding(
@@ -235,29 +274,40 @@ class _PaymentCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _InfoRow(
-              label: 'Check-in',
-              value: formatTanggal(reservation.tglCheckin),
-              icon: Icons.login_outlined,
-            ),
-            const SizedBox(height: 8),
-            _InfoRow(
-              label: 'Check-out',
-              value: formatTanggal(reservation.tglCheckout),
-              icon: Icons.logout_outlined,
-            ),
-            const SizedBox(height: 8),
-            _InfoRow(
-              label: 'Durasi',
-              value: '${reservation.jumlahMalam} malam',
-              icon: Icons.nights_stay_outlined,
-            ),
-            const SizedBox(height: 8),
-            _InfoRow(
-              label: 'Tagihan',
-              value: formatRupiah(reservation.totalTagihan),
-              icon: Icons.payments_outlined,
-              strong: true,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Column(
+                children: [
+                  _InfoRow(
+                    label: 'Check-in',
+                    value: formatTanggal(reservation.tglCheckin),
+                    icon: Icons.login_outlined,
+                  ),
+                  const SizedBox(height: 8),
+                  _InfoRow(
+                    label: 'Check-out',
+                    value: formatTanggal(reservation.tglCheckout),
+                    icon: Icons.logout_outlined,
+                  ),
+                  const SizedBox(height: 8),
+                  _InfoRow(
+                    label: 'Durasi',
+                    value: '${reservation.jumlahMalam} malam',
+                    icon: Icons.nights_stay_outlined,
+                  ),
+                  const SizedBox(height: 8),
+                  _InfoRow(
+                    label: 'Tagihan',
+                    value: formatRupiah(reservation.totalTagihan),
+                    icon: Icons.payments_outlined,
+                    strong: true,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -277,7 +327,7 @@ class _ProofCard extends StatelessWidget {
 
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         side: const BorderSide(color: AppColors.grayBorder),
       ),
       child: Padding(
@@ -295,26 +345,48 @@ class _ProofCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             if (proofUrl == null)
-              const Text(
-                'Bukti pembayaran belum diunggah.',
-                style: TextStyle(color: AppColors.grayMuted),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.upload_file_outlined,
+                      color: AppColors.grayMuted,
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Bukti pembayaran belum diunggah.',
+                        style: TextStyle(color: AppColors.grayMuted),
+                      ),
+                    ),
+                  ],
+                ),
               )
             else
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: proofUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  errorWidget: (context, url, error) => const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(
-                      child: Text(
-                        'Gagal memuat bukti pembayaran.',
-                        style: TextStyle(color: AppColors.grayMuted),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: AspectRatio(
+                  aspectRatio: 4 / 3,
+                  child: CachedNetworkImage(
+                    imageUrl: proofUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (context, url, error) => const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          'Gagal memuat bukti pembayaran.',
+                          style: TextStyle(color: AppColors.grayMuted),
+                        ),
                       ),
                     ),
                   ),
@@ -348,10 +420,22 @@ class _StatusMessage extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: _statusColor(status).withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _statusColor(status)),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: _statusColor(status).withValues(alpha: 0.35)),
       ),
-      child: Text(message, style: TextStyle(color: _statusColor(status))),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(_statusIcon(status), color: _statusColor(status), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: _statusColor(status), height: 1.4),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -368,8 +452,9 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Text(
         status,
@@ -437,8 +522,19 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Icon(Icons.error_outline, color: AppColors.merah, size: 38),
+            const SizedBox(height: 12),
             const Text(
               'Gagal memuat detail pesanan.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.grayText,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Periksa koneksi lalu coba muat ulang.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.grayMuted),
             ),
@@ -449,6 +545,16 @@ class _ErrorState extends StatelessWidget {
       ),
     );
   }
+}
+
+IconData _statusIcon(String status) {
+  return switch (status) {
+    'Selesai' => Icons.check_circle_outline,
+    'Batal' => Icons.cancel_outlined,
+    'Menunggu Konfirmasi' => Icons.verified_user_outlined,
+    'Menunggu Pembayaran' => Icons.payments_outlined,
+    _ => Icons.info_outline,
+  };
 }
 
 Color _statusColor(String status) {

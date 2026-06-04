@@ -4,10 +4,16 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Users } from "lucide-react";
+import { Camera, Home, Loader2, Save, Users } from "lucide-react";
 import { toast } from "sonner";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,14 +119,25 @@ export default function UnitForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-gray-900">
-                Informasi Dasar
-              </CardTitle>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+          <Card className="border-gray-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-gray-100 pb-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#1E3A8A]/5 text-[#1E3A8A]">
+                  <Home size={18} />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-semibold text-gray-900">
+                    Informasi Dasar
+                  </CardTitle>
+                  <CardDescription>
+                    Data ini tampil di katalog mobile dan menjadi acuan admin
+                    saat memantau pemesanan.
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5 pt-1">
               <FormField
                 control={form.control}
                 name="id_unit"
@@ -138,6 +155,9 @@ export default function UnitForm({
                         }
                       />
                     </FormControl>
+                    <p className="text-xs text-gray-500">
+                      Maksimal 10 karakter, contoh format: UNT-000001.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -156,6 +176,9 @@ export default function UnitForm({
                         {...field}
                       />
                     </FormControl>
+                    <p className="text-xs text-gray-500">
+                      Gunakan nama singkat yang mudah dikenali tamu.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -188,6 +211,9 @@ export default function UnitForm({
                         />
                       </div>
                     </FormControl>
+                    <p className="text-xs text-gray-500">
+                      Jumlah tamu maksimal yang direkomendasikan untuk unit ini.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -318,13 +344,24 @@ export default function UnitForm({
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-gray-900">
-                Foto Unit
-              </CardTitle>
+          <Card className="border-gray-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-gray-100 pb-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#10B981]/10 text-[#10B981]">
+                  <Camera size={18} />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-semibold text-gray-900">
+                    Foto Unit
+                  </CardTitle>
+                  <CardDescription>
+                    Foto pertama menjadi cover di katalog tamu. Pakai foto yang
+                    terang dan jelas.
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-1">
               <MultiFotoUploader
                 newFiles={newFiles}
                 onNewFilesChange={setNewFiles}
@@ -338,7 +375,7 @@ export default function UnitForm({
           </Card>
         </div>
 
-        <div className="flex justify-end gap-3">
+        <div className="sticky bottom-4 z-10 flex justify-end gap-3 rounded-xl border border-gray-200 bg-white/95 p-3 shadow-sm backdrop-blur">
           <Button
             type="button"
             variant="outline"
@@ -352,7 +389,11 @@ export default function UnitForm({
             disabled={isPending}
             className="bg-[#1E3A8A] hover:bg-[#162d6e] text-white"
           >
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
             {mode === "create" ? "Simpan Unit" : "Perbarui Unit"}
           </Button>
         </div>

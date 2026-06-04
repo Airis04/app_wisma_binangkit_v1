@@ -56,12 +56,54 @@ class _DetailUnitPageState extends ConsumerState<DetailUnitPage> {
         data: (data) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: data.bisaDipesan
-                  ? () => context.push('/unit/${data.idUnit}/pesan')
-                  : null,
-              child: Text(
-                data.bisaDipesan ? 'Pesan Unit Ini' : 'Unit Tidak Bisa Dipesan',
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.grayBorder),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Mulai dari',
+                          style: TextStyle(
+                            color: AppColors.grayMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          '${formatRupiah(data.hargaPerMalam)} / malam',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.navy,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: data.bisaDipesan
+                        ? () => context.push('/unit/${data.idUnit}/pesan')
+                        : null,
+                    child: Text(data.bisaDipesan ? 'Pesan' : 'Tidak Bisa'),
+                  ),
+                ],
               ),
             ),
           ),
@@ -86,32 +128,82 @@ class _DetailContent extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
       children: [
-        AspectRatio(
-          aspectRatio: 16 / 10,
-          child: photos.isEmpty
-              ? const ColoredBox(
-                  color: AppColors.background,
-                  child: Icon(
-                    Icons.home_work_outlined,
-                    color: AppColors.grayMuted,
-                    size: 54,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: AspectRatio(
+              aspectRatio: 16 / 10,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  photos.isEmpty
+                      ? const ColoredBox(
+                          color: AppColors.card,
+                          child: Icon(
+                            Icons.home_work_outlined,
+                            color: AppColors.grayMuted,
+                            size: 54,
+                          ),
+                        )
+                      : PageView.builder(
+                          itemCount: photos.length,
+                          itemBuilder: (context, index) {
+                            return CachedNetworkImage(
+                              imageUrl: photos[index],
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              errorWidget: (context, url, error) => const Icon(
+                                Icons.broken_image_outlined,
+                                color: AppColors.grayMuted,
+                              ),
+                            );
+                          },
+                        ),
+                  Positioned(
+                    left: 12,
+                    bottom: 12,
+                    child: _StatusBadge(status: unit.statusUnit),
                   ),
-                )
-              : PageView.builder(
-                  itemCount: photos.length,
-                  itemBuilder: (context, index) {
-                    return CachedNetworkImage(
-                      imageUrl: photos[index],
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                          const Center(child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) => const Icon(
-                        Icons.broken_image_outlined,
-                        color: AppColors.grayMuted,
+                  if (photos.length > 1)
+                    Positioned(
+                      right: 12,
+                      bottom: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.52),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.photo_library_outlined,
+                              color: AppColors.card,
+                              size: 15,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              '${photos.length} foto',
+                              style: const TextStyle(
+                                color: AppColors.card,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
@@ -131,13 +223,22 @@ class _DetailContent extends StatelessWidget {
                       ),
                     ),
                   ),
-                  _StatusBadge(status: unit.statusUnit),
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                '${unit.kategori} • Kapasitas ${unit.kapasitas} orang',
-                style: const TextStyle(color: AppColors.grayMuted),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _FactPill(
+                    icon: Icons.home_work_outlined,
+                    label: unit.kategori,
+                  ),
+                  _FactPill(
+                    icon: Icons.people_outline,
+                    label: 'Kapasitas ${unit.kapasitas} orang',
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
               Text(
@@ -148,6 +249,8 @@ class _DetailContent extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              const SizedBox(height: 16),
+              _BookingHintCard(status: unit.statusUnit),
               if (unit.statusUnit == 'Perawatan') ...[
                 const SizedBox(height: 16),
                 const _StatusInfoCard(
@@ -168,13 +271,27 @@ class _DetailContent extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 24),
-              const Text(
-                'Fasilitas',
-                style: TextStyle(
-                  color: AppColors.grayText,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Fasilitas',
+                      style: TextStyle(
+                        color: AppColors.grayText,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${unit.fasilitas.length} fasilitas',
+                    style: const TextStyle(
+                      color: AppColors.grayMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               if (unit.fasilitas.isEmpty)
@@ -190,8 +307,17 @@ class _DetailContent extends StatelessWidget {
                       .map(
                         (item) => Chip(
                           label: Text(item),
-                          side: const BorderSide(color: AppColors.grayBorder),
-                          backgroundColor: AppColors.card,
+                          avatar: const Icon(
+                            Icons.check_circle_outline,
+                            size: 18,
+                            color: AppColors.hijau,
+                          ),
+                          side: BorderSide(
+                            color: AppColors.hijau.withValues(alpha: 0.25),
+                          ),
+                          backgroundColor: AppColors.hijau.withValues(
+                            alpha: 0.08,
+                          ),
                         ),
                       )
                       .toList(),
@@ -200,6 +326,103 @@ class _DetailContent extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _FactPill extends StatelessWidget {
+  const _FactPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.grayBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.navy, size: 16),
+          const SizedBox(width: 7),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.grayText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookingHintCard extends StatelessWidget {
+  const _BookingHintCard({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMaintenance = status == 'Perawatan';
+    final isOccupied = status == 'Terisi';
+
+    final icon = isMaintenance
+        ? Icons.build_circle_outlined
+        : isOccupied
+        ? Icons.event_available_outlined
+        : Icons.calendar_month_outlined;
+    final title = isMaintenance
+        ? 'Tidak tersedia untuk dipesan'
+        : isOccupied
+        ? 'Pilih tanggal lain yang tersedia'
+        : 'Cek tanggal sebelum membayar';
+    final message = isMaintenance
+        ? 'Admin menandai unit ini sedang perawatan.'
+        : isOccupied
+        ? 'Unit sedang terisi hari ini, tetapi tanggal lain masih bisa dicek.'
+        : 'Tanggal akan dicek dulu agar tidak terjadi double booking.';
+    final color = isMaintenance ? AppColors.merah : AppColors.navy;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(color: color, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: AppColors.grayMuted,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -224,9 +447,9 @@ class _StatusInfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,14 +488,16 @@ class _StatusBadge extends StatelessWidget {
     final color = switch (status) {
       'Tersedia' => AppColors.hijau,
       'Terisi' => AppColors.merah,
+      'Perawatan' => AppColors.merah,
       _ => AppColors.grayMuted,
     };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Text(
         status,
@@ -296,17 +521,39 @@ class _ErrorState extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Gagal memuat detail unit.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.grayMuted),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton(onPressed: onRetry, child: const Text('Coba Lagi')),
-          ],
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.grayBorder),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.merah, size: 38),
+              const SizedBox(height: 12),
+              const Text(
+                'Gagal memuat detail unit.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.grayText,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Periksa koneksi lalu coba muat ulang.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.grayMuted),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: onRetry,
+                child: const Text('Coba Lagi'),
+              ),
+            ],
+          ),
         ),
       ),
     );

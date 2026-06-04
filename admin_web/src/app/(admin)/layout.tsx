@@ -26,12 +26,19 @@ export default async function AdminLayout({
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 w-full">
+    <div className="flex h-screen w-full overflow-hidden bg-[#F9FAFB]">
       <AdminSidebar />
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-0">
-          <h2 className="text-xl font-bold text-gray-800">Manajemen Wisma</h2>
+      <div className="flex h-screen flex-1 flex-col overflow-hidden">
+        <header className="z-0 flex h-20 items-center justify-between border-b border-gray-200 bg-white px-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#1E3A8A]">
+              Panel Admin
+            </p>
+            <h2 className="text-xl font-bold text-gray-900">
+              Manajemen Wisma Binangkit
+            </h2>
+          </div>
           <div className="flex items-center">
             <UserMenu
               namaLengkap={currentUser?.nama_lengkap ?? session.user.nama_lengkap}
@@ -41,7 +48,7 @@ export default async function AdminLayout({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8 bg-[#F9FAFB]">
+        <main className="flex-1 overflow-y-auto bg-[#F9FAFB] p-8">
           {children}
         </main>
       </div>

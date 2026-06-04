@@ -6,19 +6,27 @@
   color: #111827;
 }
 
+.wb-calendar-wrap {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
 .wb-calendar-wrap .rbc-month-view {
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  min-width: 760px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
 }
 
 .wb-calendar-wrap .rbc-header {
-  padding: 10px 6px;
-  font-weight: 600;
+  padding: 12px 6px;
+  font-weight: 700;
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #6b7280;
+  letter-spacing: 0.08em;
+  color: #1e3a8a;
   background-color: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -30,11 +38,11 @@
 }
 
 .wb-calendar-wrap .rbc-month-row {
-  min-height: 110px;
+  min-height: 116px;
 }
 
 .wb-calendar-wrap .rbc-date-cell {
-  padding: 6px 8px;
+  padding: 8px;
   font-size: 13px;
   text-align: right;
   color: #374151;
@@ -50,20 +58,39 @@
 
 .wb-calendar-wrap .rbc-today {
   background-color: rgba(30, 58, 138, 0.08);
-  box-shadow: inset 0 0 0 2px #1e3a8a;
+  box-shadow: inset 0 0 0 2px rgba(30, 58, 138, 0.35);
   position: relative;
   z-index: 1;
 }
 
 .wb-calendar-wrap .rbc-now > .rbc-button-link {
-  color: #1e3a8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background-color: #1e3a8a;
+  color: #ffffff;
+  padding: 0 6px;
   font-weight: 700;
+}
+
+.wb-calendar-wrap .rbc-now.rbc-off-range > .rbc-button-link {
+  color: #1e3a8a;
+  background-color: transparent;
 }
 
 .wb-calendar-wrap .rbc-event {
   border: none;
   outline: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.24);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.wb-calendar-wrap .rbc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.28);
 }
 
 .wb-calendar-wrap .rbc-event:focus,
@@ -74,8 +101,9 @@
 
 .wb-calendar-wrap .rbc-show-more {
   color: #1e3a8a;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 12px;
+  background-color: transparent;
 }
 
 .wb-calendar-wrap .rbc-show-more:hover {
@@ -84,7 +112,7 @@
 }
 
 .wb-calendar-wrap .rbc-day-bg.wb-day-past {
-  background-color: #f3f4f6;
+  background-color: #f9fafb;
 }
 
 .wb-calendar-wrap .rbc-date-cell.wb-day-past {

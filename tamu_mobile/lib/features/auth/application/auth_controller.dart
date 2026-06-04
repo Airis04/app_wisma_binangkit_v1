@@ -12,12 +12,14 @@ class AuthState {
     this.user,
     this.isLoading = false,
     this.errorMessage,
+    this.hasSeenOnboarding = true,
   });
 
   final AuthStatus status;
   final MobileUser? user;
   final bool isLoading;
   final String? errorMessage;
+  final bool hasSeenOnboarding;
 
   bool get isLoggedIn => status == AuthStatus.authenticated && user != null;
   bool get isChecking => status == AuthStatus.checking;
@@ -27,6 +29,7 @@ class AuthState {
     MobileUser? user,
     bool? isLoading,
     String? errorMessage,
+    bool? hasSeenOnboarding,
     bool clearError = false,
   }) {
     return AuthState(
@@ -34,11 +37,15 @@ class AuthState {
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      hasSeenOnboarding: hasSeenOnboarding ?? this.hasSeenOnboarding,
     );
   }
 
   AuthState withoutUser() {
-    return const AuthState(status: AuthStatus.unauthenticated);
+    return AuthState(
+      status: AuthStatus.unauthenticated,
+      hasSeenOnboarding: hasSeenOnboarding,
+    );
   }
 }
 
@@ -52,19 +59,28 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> bootstrap() async {
     state = state.copyWith(status: AuthStatus.checking, clearError: true);
     try {
+      final hasSeenOnboarding = await _repository.hasSeenOnboarding();
       final hasToken = await _repository.hasStoredToken();
       if (!hasToken) {
-        state = const AuthState(status: AuthStatus.unauthenticated);
+        state = AuthState(
+          status: AuthStatus.unauthenticated,
+          hasSeenOnboarding: hasSeenOnboarding,
+        );
         return;
       }
 
       final user = await _repository.me();
-      state = AuthState(status: AuthStatus.authenticated, user: user);
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        user: user,
+        hasSeenOnboarding: true,
+      );
     } catch (err) {
       await _repository.logout();
       state = AuthState(
         status: AuthStatus.unauthenticated,
         errorMessage: _messageFromError(err),
+        hasSeenOnboarding: true,
       );
     }
   }
@@ -77,7 +93,11 @@ class AuthController extends StateNotifier<AuthState> {
         password: password,
       );
       await _repository.saveSession(result);
-      state = AuthState(status: AuthStatus.authenticated, user: result.user);
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        user: result.user,
+        hasSeenOnboarding: true,
+      );
       return true;
     } catch (err) {
       state = state.copyWith(
@@ -102,7 +122,10 @@ class AuthController extends StateNotifier<AuthState> {
         password: password,
         noTelepon: noTelepon.trim(),
       );
-      state = const AuthState(status: AuthStatus.unauthenticated);
+      state = AuthState(
+        status: AuthStatus.unauthenticated,
+        hasSeenOnboarding: state.hasSeenOnboarding,
+      );
       return true;
     } catch (err) {
       state = state.copyWith(
@@ -132,7 +155,11 @@ class AuthController extends StateNotifier<AuthState> {
         passwordLama: passwordLama,
         passwordBaru: passwordBaru,
       );
-      state = AuthState(status: AuthStatus.authenticated, user: user);
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        user: user,
+        hasSeenOnboarding: state.hasSeenOnboarding,
+      );
       return true;
     } catch (err) {
       state = state.copyWith(
@@ -147,7 +174,11 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final user = await _repository.updateProfilePhoto(filePath: filePath);
-      state = AuthState(status: AuthStatus.authenticated, user: user);
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        user: user,
+        hasSeenOnboarding: state.hasSeenOnboarding,
+      );
       return true;
     } catch (err) {
       state = state.copyWith(
@@ -156,6 +187,15 @@ class AuthController extends StateNotifier<AuthState> {
       );
       return false;
     }
+  }
+
+  Future<void> completeOnboarding() async {
+    await _repository.markOnboardingSeen();
+    state = state.copyWith(
+      status: AuthStatus.unauthenticated,
+      hasSeenOnboarding: true,
+      clearError: true,
+    );
   }
 
   String _messageFromError(Object err) {

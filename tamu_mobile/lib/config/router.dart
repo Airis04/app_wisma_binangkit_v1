@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/application/auth_controller.dart';
 import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/login_page.dart';
+import '../features/auth/presentation/onboarding_page.dart';
+import '../features/auth/presentation/splash_page.dart';
 import '../features/katalog/presentation/detail_unit_page.dart';
 import '../features/katalog/presentation/katalog_page.dart';
 import '../features/pengaturan/presentation/pengaturan_page.dart';
@@ -20,22 +22,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: _AuthRefreshListenable(ref),
     redirect: (context, state) {
+      final isSplashRoute = state.uri.path == '/splash';
+      final isOnboardingRoute = state.uri.path == '/onboarding';
       final isLoginRoute = state.uri.path == '/login';
       final isForgotPasswordRoute = state.uri.path == '/lupa-password';
-      final isPublicAuthRoute = isLoginRoute || isForgotPasswordRoute;
+      final isPublicAuthRoute =
+          isSplashRoute ||
+          isOnboardingRoute ||
+          isLoginRoute ||
+          isForgotPasswordRoute;
 
       if (authState.isChecking) {
-        return isPublicAuthRoute ? null : '/login';
+        return isSplashRoute ? null : '/splash';
       }
 
       if (!authState.isLoggedIn) {
-        return isPublicAuthRoute ? null : '/login';
+        if (!authState.hasSeenOnboarding) {
+          return isOnboardingRoute ? null : '/onboarding';
+        }
+        return isLoginRoute || isForgotPasswordRoute ? null : '/login';
       }
 
       if (isPublicAuthRoute) return '/';
       return null;
     },
     routes: [
+      GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingPage(),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/lupa-password',
@@ -122,28 +138,49 @@ class _MainShell extends StatelessWidget {
     final index = _currentIndex(context);
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) => _onTap(context, i),
-        backgroundColor: AppColors.card,
-        indicatorColor: AppColors.navy.withValues(alpha: 0.12),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: AppColors.navy),
-            label: 'Katalog',
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.grayBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long, color: AppColors.navy),
-            label: 'Riwayat',
+          clipBehavior: Clip.antiAlias,
+          child: NavigationBar(
+            selectedIndex: index,
+            onDestinationSelected: (i) => _onTap(context, i),
+            backgroundColor: AppColors.card,
+            elevation: 0,
+            height: 68,
+            indicatorColor: AppColors.navy.withValues(alpha: 0.12),
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home, color: AppColors.navy),
+                label: 'Katalog',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.receipt_long_outlined),
+                selectedIcon: Icon(Icons.receipt_long, color: AppColors.navy),
+                label: 'Riwayat',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.settings_outlined),
+                selectedIcon: Icon(Icons.settings, color: AppColors.navy),
+                label: 'Pengaturan',
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings, color: AppColors.navy),
-            label: 'Pengaturan',
-          ),
-        ],
+        ),
       ),
     );
   }

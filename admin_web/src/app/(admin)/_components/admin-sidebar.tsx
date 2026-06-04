@@ -25,16 +25,20 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-[#1E3A8A] text-white flex flex-col shadow-lg z-10">
-      <div className="p-6 border-b border-white/10">
-        <div className="flex items-center space-x-2">
-          <Building2 size={24} className="text-white" />
-          <h1 className="text-xl font-bold tracking-wide">Wisma Binangkit</h1>
+    <aside className="z-10 flex w-72 flex-col bg-[#1E3A8A] text-white shadow-lg">
+      <div className="border-b border-white/10 p-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-white/15">
+            <Building2 size={24} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-wide">Wisma Binangkit</h1>
+            <p className="text-xs font-medium text-white">Manajemen Admin</p>
+          </div>
         </div>
-        <p className="text-xs text-white/70 mt-1 ml-8">Admin Management</p>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+      <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-6">
         {menuItems.map(({ href, label, icon: Icon }) => {
           const isActive =
             pathname === href || pathname.startsWith(`${href}/`);
@@ -44,9 +48,9 @@ export default function AdminSidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center px-4 py-3 rounded-md transition-all font-medium text-white",
+                "flex items-center rounded-md px-4 py-3 font-semibold text-white transition-all",
                 isActive
-                  ? "bg-white/20"
+                  ? "bg-white text-[#1E3A8A] shadow-sm"
                   : "hover:bg-white/10"
               )}
             >

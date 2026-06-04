@@ -3,12 +3,18 @@
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, PlusCircle, Save } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -83,19 +89,27 @@ export default function FormCatatPengeluaran() {
   }
 
   return (
-    <Card className="border-gray-200">
-      <CardHeader>
-        <CardTitle className="text-base font-semibold text-gray-900">
-          Catat Pengeluaran Baru
-        </CardTitle>
-        <p className="text-sm text-gray-500">
-          ID Biaya akan dibuat otomatis dengan format BIY-000001.
-        </p>
+    <Card className="border-gray-200 bg-white shadow-sm">
+      <CardHeader className="border-b border-gray-100 pb-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EF4444]/10 text-[#EF4444]">
+            <PlusCircle size={18} />
+          </div>
+          <div>
+            <CardTitle className="text-base font-semibold text-gray-900">
+              Catat Pengeluaran Baru
+            </CardTitle>
+            <CardDescription>
+              ID Biaya dibuat otomatis dengan format BIY-000001. Data ini
+              langsung memengaruhi laba bersih di Dasbor.
+            </CardDescription>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-1">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="tanggal_pencatatan"
@@ -109,7 +123,7 @@ export default function FormCatatPengeluaran() {
                             type="button"
                             variant="outline"
                             className={cn(
-                              "w-full justify-start text-left font-normal",
+                              "w-full justify-start bg-white text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
                           >
@@ -151,7 +165,7 @@ export default function FormCatatPengeluaran() {
                     <FormLabel>Kategori Pengeluaran</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white">
                           <SelectValue placeholder="Pilih kategori" />
                         </SelectTrigger>
                       </FormControl>
@@ -169,70 +183,77 @@ export default function FormCatatPengeluaran() {
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="total_pengeluaran"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Pengeluaran</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">
-                        Rp
-                      </span>
-                      <Input
-                        inputMode="numeric"
-                        placeholder="0"
-                        className="pl-10"
-                        value={
-                          field.value === 0
-                            ? ""
-                            : field.value.toLocaleString("id-ID")
-                        }
-                        onChange={(e) => {
-                          const digits = e.target.value.replace(/\D/g, "");
-                          field.onChange(digits === "" ? 0 : Number(digits));
-                        }}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
+              <FormField
+                control={form.control}
+                name="total_pengeluaran"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Total Pengeluaran</FormLabel>
+                    <FormControl>
+                      <div className="flex h-8 items-center rounded-lg border border-input bg-white transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+                        <span className="flex h-full items-center border-r border-gray-200 px-3 text-sm text-gray-500">
+                          Rp
+                        </span>
+                        <Input
+                          inputMode="numeric"
+                          placeholder="0"
+                          className="h-full border-0 bg-transparent px-3 font-semibold focus-visible:border-transparent focus-visible:ring-0"
+                          value={
+                            field.value === 0
+                              ? ""
+                              : field.value.toLocaleString("id-ID")
+                          }
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, "");
+                            field.onChange(digits === "" ? 0 : Number(digits));
+                          }}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="deskripsi_pengeluaran"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Deskripsi</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Misal: Tagihan listrik PLN bulan Mei 2026"
+                        maxLength={100}
+                        rows={3}
+                        className="resize-none"
+                        {...field}
                       />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    </FormControl>
+                    <p className="text-xs text-gray-500">
+                      {field.value.length} / 100 karakter
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-            <FormField
-              control={form.control}
-              name="deskripsi_pengeluaran"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Deskripsi</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Misal: Tagihan listrik PLN bulan Mei 2026"
-                      maxLength={100}
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <p className="text-xs text-gray-500">
-                    {field.value.length} / 100 karakter
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end border-t border-gray-100 pt-4">
               <Button
                 type="submit"
                 disabled={isPending}
                 className="bg-[#1E3A8A] hover:bg-[#162d6e] text-white"
               >
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
                 Catat Pengeluaran
               </Button>
             </div>

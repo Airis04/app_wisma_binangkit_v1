@@ -285,16 +285,34 @@ class _ReservasiPageState extends ConsumerState<ReservasiPage> {
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: AppColors.card,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          title: const Row(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          title: Column(
             children: [
-              Icon(Icons.check_circle, color: AppColors.hijau),
-              SizedBox(width: 10),
-              Expanded(child: Text('Bukti Pembayaran Terkirim')),
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: AppColors.hijau.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: AppColors.hijau,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Bukti Pembayaran Terkirim',
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
           content: Text(
             'Reservasi $idReservasi sudah masuk ke verifikasi pemilik. Status pesanan bisa dilihat di Riwayat.',
+            textAlign: TextAlign.center,
           ),
           actions: [
             OutlinedButton(
@@ -401,6 +419,7 @@ class _ReservasiForm extends StatelessWidget {
     final isAvailable = availability?.available == true;
     final totalTagihan =
         availability?.totalTagihan ?? unit.hargaPerMalam * jumlahMalam;
+    final canContinue = !isPaymentStep && isAvailable;
 
     if (!unit.bisaDipesan) {
       return ListView(
@@ -420,25 +439,18 @@ class _ReservasiForm extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
         _UnitSummaryCard(unit: unit),
         const SizedBox(height: 16),
         _StepHeader(isPaymentStep: isPaymentStep),
         const SizedBox(height: 16),
         if (!isPaymentStep) ...[
-          _DateButton(
-            label: 'Check-in',
-            value: checkin == null ? 'Pilih tanggal' : formatTanggal(checkin!),
-            onPressed: isBusy ? null : onPickCheckin,
-          ),
-          const SizedBox(height: 12),
-          _DateButton(
-            label: 'Check-out',
-            value: checkout == null
-                ? 'Pilih tanggal'
-                : formatTanggal(checkout!),
-            onPressed: isBusy ? null : onPickCheckout,
+          _DateSelectionCard(
+            checkin: checkin,
+            checkout: checkout,
+            onPickCheckin: isBusy ? null : onPickCheckin,
+            onPickCheckout: isBusy ? null : onPickCheckout,
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -456,6 +468,15 @@ class _ReservasiForm extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 16),
+        if (availability != null) ...[
+          _AvailabilityStatusCard(
+            result: availability!,
+            message: availability!.available
+                ? 'Unit bisa dipesan untuk tanggal yang dipilih.'
+                : errorMessage ?? availability!.message,
+          ),
+          const SizedBox(height: 16),
+        ],
         _SummaryCard(
           jumlahMalam: jumlahMalam,
           totalTagihan: totalTagihan,
@@ -478,7 +499,7 @@ class _ReservasiForm extends StatelessWidget {
             label: const Text('Pilih Unit Lain'),
           ),
         ],
-        if (!isPaymentStep && isAvailable) ...[
+        if (canContinue) ...[
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: isBusy ? null : onContinueToPayment,
@@ -492,14 +513,9 @@ class _ReservasiForm extends StatelessWidget {
             paymentSetting: paymentSetting,
           ),
           const SizedBox(height: 16),
-          OutlinedButton.icon(
+          _UploadProofCard(
             onPressed: isBusy ? null : onPickBukti,
-            icon: const Icon(Icons.upload_file_outlined),
-            label: Text(
-              buktiBayar == null
-                  ? 'Pilih Bukti Bayar'
-                  : 'Bukti Dipilih: ${buktiBayar!.name}',
-            ),
+            fileName: buktiBayar?.name,
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
@@ -508,11 +524,12 @@ class _ReservasiForm extends StatelessWidget {
             label: const Text('Ubah Tanggal'),
           ),
         ],
-        if (errorMessage != null) ...[
+        if (errorMessage != null &&
+            !(availability != null && availability?.available == false)) ...[
           const SizedBox(height: 14),
           _MessageBox(message: errorMessage!, isError: true),
         ],
-        if (successMessage != null) ...[
+        if (successMessage != null && !canContinue) ...[
           const SizedBox(height: 14),
           _MessageBox(message: successMessage!, isError: false),
         ],
@@ -545,7 +562,7 @@ class _UnitSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         side: const BorderSide(color: AppColors.grayBorder),
       ),
       child: Padding(
@@ -562,20 +579,73 @@ class _UnitSummaryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Text(
-              '${unit.kategori} • Kapasitas ${unit.kapasitas} orang',
-              style: const TextStyle(color: AppColors.grayMuted),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _TinyInfoPill(
+                  icon: Icons.home_work_outlined,
+                  label: unit.kategori,
+                ),
+                _TinyInfoPill(
+                  icon: Icons.people_outline,
+                  label: '${unit.kapasitas} orang',
+                ),
+              ],
             ),
             const SizedBox(height: 10),
-            Text(
-              '${formatRupiah(unit.hargaPerMalam)} / malam',
-              style: const TextStyle(
-                color: AppColors.navy,
-                fontWeight: FontWeight.w800,
-              ),
+            Row(
+              children: [
+                const Icon(
+                  Icons.payments_outlined,
+                  size: 18,
+                  color: AppColors.navy,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${formatRupiah(unit.hargaPerMalam)} / malam',
+                  style: const TextStyle(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TinyInfoPill extends StatelessWidget {
+  const _TinyInfoPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.grayMuted, size: 15),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.grayText,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -588,8 +658,8 @@ class _BlockedUnitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: AppColors.merah),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(color: AppColors.merah.withValues(alpha: 0.35)),
       ),
       child: const Padding(
         padding: EdgeInsets.all(16),
@@ -631,22 +701,35 @@ class _StepHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _StepPill(label: 'Tanggal', isActive: !isPaymentStep),
-        const Expanded(
-          child: Divider(color: AppColors.grayBorder, thickness: 1),
-        ),
-        _StepPill(label: 'Pembayaran', isActive: isPaymentStep),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.grayBorder),
+      ),
+      child: Row(
+        children: [
+          _StepPill(label: 'Tanggal', number: '1', isActive: !isPaymentStep),
+          const Expanded(
+            child: Divider(color: AppColors.grayBorder, thickness: 1),
+          ),
+          _StepPill(label: 'Pembayaran', number: '2', isActive: isPaymentStep),
+        ],
+      ),
     );
   }
 }
 
 class _StepPill extends StatelessWidget {
-  const _StepPill({required this.label, required this.isActive});
+  const _StepPill({
+    required this.label,
+    required this.number,
+    required this.isActive,
+  });
 
   final String label;
+  final String number;
   final bool isActive;
 
   @override
@@ -655,17 +738,162 @@ class _StepPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isActive ? AppColors.navy : AppColors.card,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: isActive ? AppColors.navy : AppColors.grayBorder,
         ),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isActive ? AppColors.card : AppColors.grayMuted,
-          fontWeight: FontWeight.w800,
+      child: Row(
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: isActive ? AppColors.card : AppColors.background,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: TextStyle(
+                  color: isActive ? AppColors.navy : AppColors.grayMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: isActive ? AppColors.card : AppColors.grayMuted,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DateSelectionCard extends StatelessWidget {
+  const _DateSelectionCard({
+    required this.checkin,
+    required this.checkout,
+    required this.onPickCheckin,
+    required this.onPickCheckout,
+  });
+
+  final DateTime? checkin;
+  final DateTime? checkout;
+  final VoidCallback? onPickCheckin;
+  final VoidCallback? onPickCheckout;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: const BorderSide(color: AppColors.grayBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Pilih Tanggal Menginap',
+              style: TextStyle(
+                color: AppColors.grayText,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Tanggal akan dicek terlebih dahulu sebelum masuk pembayaran.',
+              style: TextStyle(color: AppColors.grayMuted, height: 1.35),
+            ),
+            const SizedBox(height: 14),
+            _DateButton(
+              label: 'Check-in',
+              value: checkin == null
+                  ? 'Pilih tanggal'
+                  : formatTanggal(checkin!),
+              onPressed: onPickCheckin,
+            ),
+            const SizedBox(height: 12),
+            _DateButton(
+              label: 'Check-out',
+              value: checkout == null
+                  ? 'Pilih tanggal'
+                  : formatTanggal(checkout!),
+              onPressed: onPickCheckout,
+            ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _AvailabilityStatusCard extends StatelessWidget {
+  const _AvailabilityStatusCard({required this.result, required this.message});
+
+  final AvailabilityResult result;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final isAvailable = result.available;
+    final color = isAvailable ? AppColors.hijau : AppColors.merah;
+    final title = isAvailable ? 'Tanggal tersedia' : 'Tanggal belum tersedia';
+    final icon = isAvailable
+        ? Icons.check_circle_outline
+        : Icons.event_busy_outlined;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(color: color, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: AppColors.grayText,
+                    height: 1.4,
+                  ),
+                ),
+                if (isAvailable) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Total ${formatRupiah(result.totalTagihan)} untuk ${result.jumlahMalam} malam.',
+                    style: const TextStyle(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -688,7 +916,7 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         side: const BorderSide(color: AppColors.grayBorder),
       ),
       child: Padding(
@@ -704,22 +932,40 @@ class _SummaryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _SummaryRow(
-              label: 'Check-in',
-              value: checkin == null ? '-' : formatTanggalPendek(checkin!),
-            ),
-            const SizedBox(height: 6),
-            _SummaryRow(
-              label: 'Check-out',
-              value: checkout == null ? '-' : formatTanggalPendek(checkout!),
-            ),
-            const SizedBox(height: 6),
-            _SummaryRow(label: 'Jumlah malam', value: '$jumlahMalam malam'),
-            const SizedBox(height: 6),
-            _SummaryRow(
-              label: 'Total tagihan',
-              value: formatRupiah(totalTagihan),
-              isStrong: true,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Column(
+                children: [
+                  _SummaryRow(
+                    label: 'Check-in',
+                    value: checkin == null
+                        ? '-'
+                        : formatTanggalPendek(checkin!),
+                  ),
+                  const SizedBox(height: 6),
+                  _SummaryRow(
+                    label: 'Check-out',
+                    value: checkout == null
+                        ? '-'
+                        : formatTanggalPendek(checkout!),
+                  ),
+                  const SizedBox(height: 6),
+                  _SummaryRow(
+                    label: 'Jumlah malam',
+                    value: '$jumlahMalam malam',
+                  ),
+                  const SizedBox(height: 6),
+                  _SummaryRow(
+                    label: 'Total tagihan',
+                    value: formatRupiah(totalTagihan),
+                    isStrong: true,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -741,7 +987,7 @@ class _PaymentInstructionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         side: const BorderSide(color: AppColors.grayBorder),
       ),
       child: Padding(
@@ -755,6 +1001,35 @@ class _PaymentInstructionCard extends StatelessWidget {
                 color: AppColors.grayText,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Transfer sesuai nominal lalu unggah bukti pembayaran agar admin bisa melakukan verifikasi.',
+              style: TextStyle(color: AppColors.grayMuted, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.navy.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.payments_outlined, color: AppColors.navy),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      formatRupiah(totalTagihan),
+                      style: const TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             paymentSetting.when(
@@ -785,9 +1060,19 @@ class _PaymentInstructionCard extends StatelessWidget {
                     isStrong: true,
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    setting.instruksiPembayaran,
-                    style: const TextStyle(color: AppColors.grayMuted),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Text(
+                      setting.instruksiPembayaran,
+                      style: const TextStyle(
+                        color: AppColors.grayText,
+                        height: 1.4,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -803,6 +1088,84 @@ class _PaymentInstructionCard extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UploadProofCard extends StatelessWidget {
+  const _UploadProofCard({required this.onPressed, required this.fileName});
+
+  final VoidCallback? onPressed;
+  final String? fileName;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasFile = fileName != null && fileName!.isNotEmpty;
+
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: hasFile ? AppColors.hijau : AppColors.grayBorder,
+            width: hasFile ? 1.4 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: (hasFile ? AppColors.hijau : AppColors.navy).withValues(
+                  alpha: 0.1,
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Icon(
+                hasFile
+                    ? Icons.check_circle_outline
+                    : Icons.upload_file_outlined,
+                color: hasFile ? AppColors.hijau : AppColors.navy,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hasFile ? 'Bukti bayar dipilih' : 'Pilih Bukti Bayar',
+                    style: const TextStyle(
+                      color: AppColors.grayText,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    hasFile
+                        ? fileName!
+                        : 'Format JPG, PNG, atau WEBP. Maksimal 5 MB.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.grayMuted,
+                      fontSize: 12,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: AppColors.grayMuted),
           ],
         ),
       ),
@@ -933,11 +1296,24 @@ class _MessageBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
         color: color.withValues(alpha: 0.08),
       ),
-      child: Text(message, style: TextStyle(color: color)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isError ? Icons.error_outline : Icons.check_circle_outline,
+            color: color,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(message, style: TextStyle(color: color)),
+          ),
+        ],
+      ),
     );
   }
 }
