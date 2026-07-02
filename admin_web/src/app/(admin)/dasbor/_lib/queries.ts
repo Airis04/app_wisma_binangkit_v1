@@ -44,6 +44,10 @@ function startOfNextMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth() + 1, 1);
 }
 
+function startOfNextDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+}
+
 function formatTanggalIndonesia(date: Date): string {
   const day = date.getDate();
   const monthIdx = date.getMonth();
@@ -51,23 +55,26 @@ function formatTanggalIndonesia(date: Date): string {
   return `${day} ${NAMA_BULAN_PENDEK[monthIdx]} ${year}`;
 }
 
-export async function getDasborSummary(): Promise<DasborSummary> {
+export async function getDasborSummary(
+  startDate?: Date,
+  endDate?: Date
+): Promise<DasborSummary> {
   const now = new Date();
-  const monthStart = startOfMonth(now);
-  const nextMonthStart = startOfNextMonth(now);
+  const monthStart = startDate ?? startOfMonth(now);
+  const rangeEnd = endDate ? startOfNextDay(endDate) : startOfNextMonth(now);
 
   const [pemasukanAgg, pengeluaranAgg] = await Promise.all([
     prisma.reservation.aggregate({
       _sum: { total_tagihan: true },
       where: {
         status_pesanan: "Selesai",
-        tgl_checkout: { gte: monthStart, lt: nextMonthStart },
+        tgl_checkout: { gte: monthStart, lt: rangeEnd },
       },
     }),
     prisma.operationalCost.aggregate({
       _sum: { total_pengeluaran: true },
       where: {
-        tanggal_pencatatan: { gte: monthStart, lt: nextMonthStart },
+        tanggal_pencatatan: { gte: monthStart, lt: rangeEnd },
       },
     }),
   ]);
