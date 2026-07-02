@@ -1,0 +1,354 @@
+{
+  "info": {
+    "name": "Wisma Binangkit API",
+    "_postman_id": "7f9c7fc0-1fb6-4d8b-84b5-0a00c8b4f001",
+    "description": "Collection pengujian API mobile Wisma Binangkit. Gunakan variable base_url dan mobile_token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "mobile_token",
+      "value": ""
+    },
+    {
+      "key": "id_unit",
+      "value": "UNT-000001"
+    },
+    {
+      "key": "id_reservasi",
+      "value": "RES-000001"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth Mobile",
+      "item": [
+        {
+          "name": "Register Tamu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama_lengkap\": \"Tamu Testing\",\n  \"email\": \"tamu.testing@example.com\",\n  \"password\": \"password123\",\n  \"no_telepon\": \"081234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "auth",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login Tamu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tamu.testing@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Profil Saya",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Lupa Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tamu.testing@example.com\",\n  \"no_telepon\": \"081234567890\",\n  \"password_baru\": \"passwordbaru123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/forgot-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "auth",
+                "forgot-password"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unit Mobile",
+      "item": [
+        {
+          "name": "List Unit",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/mobile/units",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "units"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail Unit",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/mobile/units/{{id_unit}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "units",
+                "{{id_unit}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservasi Mobile",
+      "item": [
+        {
+          "name": "Cek Ketersediaan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_unit\": \"{{id_unit}}\",\n  \"tgl_checkin\": \"2026-06-04\",\n  \"tgl_checkout\": \"2026-06-05\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/reservations/check-availability",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "reservations",
+                "check-availability"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buat Reservasi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_unit\": \"{{id_unit}}\",\n  \"tgl_checkin\": \"2026-06-04\",\n  \"tgl_checkout\": \"2026-06-05\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/reservations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "reservations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Riwayat Reservasi Saya",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/reservations/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "reservations",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail Reservasi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/reservations/{{id_reservasi}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "reservations",
+                "{{id_reservasi}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Bukti Bayar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "bukti_bayar",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/reservations/{{id_reservasi}}/bukti-bayar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "reservations",
+                "{{id_reservasi}}",
+                "bukti-bayar"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pembayaran Mobile",
+      "item": [
+        {
+          "name": "Payment Settings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/mobile/payment-settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "mobile",
+                "payment-settings"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
