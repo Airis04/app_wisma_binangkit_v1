@@ -119,7 +119,7 @@ export default function UnitForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
           <Card className="border-gray-200 bg-white shadow-sm">
             <CardHeader className="border-b border-gray-100 pb-4">
               <div className="flex items-start gap-3">
@@ -375,7 +375,7 @@ export default function UnitForm({
           </Card>
         </div>
 
-        <div className="sticky bottom-4 z-10 flex justify-end gap-3 rounded-xl border border-gray-200 bg-white/95 p-3 shadow-sm backdrop-blur">
+        <div className="flex justify-end gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
           <Button
             type="button"
             variant="outline"

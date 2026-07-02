@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import AdminSidebar from "./_components/admin-sidebar";
 import UserMenu from "./_components/user-menu";
+import LockBodyScroll from "./_components/lock-body-scroll";
 
 export default async function AdminLayout({
   children,
@@ -27,6 +28,7 @@ export default async function AdminLayout({
 
   return (
     <div className="fixed inset-0 flex w-full overflow-hidden bg-[#F9FAFB]">
+      <LockBodyScroll />
       <AdminSidebar />
 
       <div className="flex h-screen flex-1 flex-col overflow-hidden">
