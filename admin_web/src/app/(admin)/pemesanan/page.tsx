@@ -1,17 +1,89 @@
-import { CalendarDays, CheckCircle2, Clock3, Home } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock3, Home, Search } from "lucide-react";
 
 import prisma from "@/lib/prisma";
 import { formatRupiah } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 import PemesananView from "./_components/pemesanan-view";
 
-export default async function PemesananPage() {
+type PemesananPageProps = {
+  searchParams: Promise<{
+    dari?: string;
+    sampai?: string;
+    kategori?: string;
+  }>;
+};
+
+const KATEGORI_FILTER = ["Semua", "Rumah Utama", "Kamar Luar"] as const;
+
+function toInputDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseInputDate(value: string | undefined, fallback: Date) {
+  if (!value) return fallback;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return fallback;
+
+  const [, year, month, day] = match;
+  const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return parsed;
+}
+
+function startOfNextDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+}
+
+function formatTanggalIndonesia(date: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+export default async function PemesananPage({
+  searchParams,
+}: PemesananPageProps) {
+  const params = await searchParams;
+  const today = new Date();
+  const defaultDari = new Date(today.getFullYear(), today.getMonth(), 1);
+  const defaultSampai = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  let dari = parseInputDate(params.dari, defaultDari);
+  let sampai = parseInputDate(params.sampai, defaultSampai);
+
+  if (dari > sampai) {
+    [dari, sampai] = [sampai, dari];
+  }
+
+  const selectedKategori = KATEGORI_FILTER.includes(
+    params.kategori as (typeof KATEGORI_FILTER)[number]
+  )
+    ? params.kategori
+    : "Semua";
+
   const [units, reservations] = await Promise.all([
     prisma.unit.findMany({
+      where:
+        selectedKategori === "Semua"
+          ? undefined
+          : { kategori: selectedKategori },
       orderBy: { id_unit: "asc" },
       select: { id_unit: true, nama_unit: true, kategori: true },
     }),
     prisma.reservation.findMany({
-      where: { status_pesanan: "Selesai" },
+      where: {
+        status_pesanan: "Selesai",
+        tgl_checkin: { lt: startOfNextDay(sampai) },
+        tgl_checkout: { gt: dari },
+        unit:
+          selectedKategori === "Semua"
+            ? undefined
+            : { kategori: selectedKategori },
+      },
       orderBy: { tgl_checkin: "asc" },
       include: {
         user: { select: { nama_lengkap: true, no_telepon: true } },
@@ -80,6 +152,83 @@ export default async function PemesananPage() {
               status Selesai.
             </p>
           </div>
+        </div>
+
+        <form
+          method="GET"
+          className="mt-5 grid gap-3 rounded-lg border border-gray-200 bg-[#F9FAFB] p-4 lg:grid-cols-[1fr_1fr_1fr_auto]"
+        >
+          <label className="space-y-1.5">
+            <span className="text-sm font-medium text-gray-700">
+              Dari Tanggal
+            </span>
+            <input
+              type="date"
+              name="dari"
+              defaultValue={toInputDate(dari)}
+              className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none transition-colors focus:border-[#1E3A8A] focus:ring-3 focus:ring-[#1E3A8A]/10"
+            />
+          </label>
+
+          <label className="space-y-1.5">
+            <span className="text-sm font-medium text-gray-700">
+              Sampai Tanggal
+            </span>
+            <input
+              type="date"
+              name="sampai"
+              defaultValue={toInputDate(sampai)}
+              className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none transition-colors focus:border-[#1E3A8A] focus:ring-3 focus:ring-[#1E3A8A]/10"
+            />
+          </label>
+
+          <label className="space-y-1.5">
+            <span className="text-sm font-medium text-gray-700">
+              Kategori Unit
+            </span>
+            <select
+              name="kategori"
+              defaultValue={selectedKategori}
+              className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none transition-colors focus:border-[#1E3A8A] focus:ring-3 focus:ring-[#1E3A8A]/10"
+            >
+              {KATEGORI_FILTER.map((kategori) => (
+                <option key={kategori} value={kategori}>
+                  {kategori}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex items-end">
+            <Button
+              type="submit"
+              className="w-full bg-[#1E3A8A] text-white hover:bg-[#162d6e] lg:w-auto"
+            >
+              <Search size={16} className="mr-2" />
+              Tampilkan
+            </Button>
+          </div>
+        </form>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+          <CalendarDays size={16} className="text-[#1E3A8A]" />
+          <span>
+            Periode pemesanan:{" "}
+            <strong className="text-gray-900">
+              {formatTanggalIndonesia(dari)}
+            </strong>{" "}
+            s/d{" "}
+            <strong className="text-gray-900">
+              {formatTanggalIndonesia(sampai)}
+            </strong>
+            {selectedKategori !== "Semua" ? (
+              <>
+                {" "}
+                | Kategori:{" "}
+                <strong className="text-gray-900">{selectedKategori}</strong>
+              </>
+            ) : null}
+          </span>
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-3">
