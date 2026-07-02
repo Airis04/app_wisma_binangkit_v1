@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Diperlukan agar build RELEASE bisa akses jaringan (panggil API produksi).
+         Tanpa ini, hanya build debug yang punya izin internet (disuntik otomatis
+         oleh Flutter), sehingga APK rilis gagal terhubung ke server. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Wisma Binangkit"
         android:name="${applicationName}"
