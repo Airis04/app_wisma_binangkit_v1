@@ -35,7 +35,7 @@ export default function UserMenu({ namaLengkap, email, fotoProfil }: Props) {
                 alt={namaLengkap}
                 fill
                 sizes="32px"
-                className="object-contain p-1"
+                className="object-cover"
               />
             </span>
           ) : (

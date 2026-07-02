@@ -153,7 +153,7 @@ export default function AccountSettingsForm({
                     alt={defaultValues.nama_lengkap}
                     fill
                     sizes="128px"
-                    className="object-contain p-3"
+                    className="object-cover"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-[#1E3A8A]">
